@@ -1,0 +1,21 @@
+<ccTxnResponseV1 xmlns="http://www.optimalpayments.com/creditcard/xmlschema/v1">
+  <confirmationNumber>129976072</confirmationNumber>
+  <decision>ERROR</decision>
+  <code>3402</code>
+  <actionCode>M</actionCode>
+  <description>The requested credit amount exceeds the remaining settlement amount.</description>
+  <detail>
+    <tag>InternalResponseCode</tag>
+    <value>302</value>
+  </detail>
+  <detail>
+    <tag>SubErrorCode</tag>
+    <value>0</value>
+  </detail>
+  <detail>
+    <tag>InternalResponseDescription</tag>
+    <value>Credit not allowed. Requested credit amount exceeds remaining amount.</value>
+  </detail>
+  <txnTime>2012-05-07T13:18:10.528-04:00</txnTime>
+  <duplicateFound>false</duplicateFound>
+</ccTxnResponseV1>

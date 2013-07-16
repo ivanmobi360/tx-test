@@ -1,0 +1,24 @@
+<ccTxnResponseV1 xmlns="http://www.optimalpayments.com/creditcard/xmlschema/v1">
+  <confirmationNumber>129895957</confirmationNumber>
+  <decision>DECLINED</decision>
+  <code>3019</code>
+  <actionCode>C</actionCode>
+  <description>Your request has failed the CVD check. Please note that the amount has still been reserved on the customer's card and will be released in 3 to 5 business days. Please ensure the CVD value is accurate before retrying the transaction.</description>
+  <authCode>113189</authCode>
+  <avsResponse>E</avsResponse>
+  <cvdResponse>N</cvdResponse>
+  <detail>
+    <tag>InternalResponseCode</tag>
+    <value>163</value>
+  </detail>
+  <detail>
+    <tag>SubErrorCode</tag>
+    <value>1010</value>
+  </detail>
+  <detail>
+    <tag>InternalResponseDescription</tag>
+    <value>auth failed</value>
+  </detail>
+  <txnTime>2012-04-05T11:23:00.992-04:00</txnTime>
+  <duplicateFound>false</duplicateFound>
+</ccTxnResponseV1>

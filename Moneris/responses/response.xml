@@ -1,0 +1,93 @@
+<?xml version='1.0' standalone='yes'?>
+<response>
+	<response_order_id>mhp1573006623</response_order_id>
+	<bank_transaction_id>660035520011120030</bank_transaction_id>
+	<response_code>027</response_code>
+	<iso_code>01</iso_code>
+	<bank_approval_code>608681</bank_approval_code>
+	<time_stamp>18:53:27</time_stamp>
+	<date_stamp>2008-07-10</date_stamp>
+	<trans_name>purchase</trans_name>
+	<message>APPROVED * =</message>
+	<charge_total>1.00</charge_total>
+	<cardholder>Bill Smith</cardholder>
+	<card_num>4510***5010</card_num>
+	<card>V</card>
+	<expiry_date>0807</expiry_date>
+	<result>1</result>
+	<eci>7</eci>
+	<txn_num>829-0_22</txn_num>
+	<rvar1>1_rvar</rvar1>
+	<rvar2>2_rvar</rvar2>
+	<transactionKey>uJv2RGGasX4Kd3Tlz3eujRAY5wUCd1</transactionKey>
+	<recur_result> </recur_result>
+	<gift_card>
+		<order_no>mhp1573006623_g1</order_no>
+		<txn_num>9041-1215730102475-00035540_21</txn_num>
+		<response_code>000</response_code>
+		<ref_num>37286815</ref_num>
+		<terminal_id>00035540</terminal_id>
+		<txn_type>purchase</txn_type>
+		<card_num>0211***0222</card_num>
+		<card_desc>Gift Fixed Reloadabl</card_desc>
+		<date_time>Jul 10 2008 06:53PM</date_time>
+		<gift_charge_total>99.50</gift_charge_total>
+		<rem_balance>0.00</rem_balance>
+		<display_text>Approved</display_text>
+		<receipt_text>En
+		NHLJ: Jul 10, 2008
+		NHC: 07/10/2008
+		NHRJ: 10-07-2008
+		DHLJ: 10 Jul 2008D
+		DHC: Jul 10, 2008
+		DHRJ: End Of Text
+		</receipt_text>
+		<voucher_text> </voucher_text>
+		<result>1</result>
+	</gift_card>
+	<item>
+		<quantity>3</quantity>
+		<description>qunat 3</description>
+		<id>sku123</id>
+		<price>4.00</price>
+	</item>
+	<item>
+		<quantity>2</quantity>
+		<description>qunat 2</description>
+		<id>2sku123</id>
+		<price>24.00</price>
+	</item>
+	<item_misc>
+		<shipping_cost>4.03</shipping_cost>
+		<hst></hst>
+		<pst></pst>
+		<gst>3.03</gst>
+	</item_misc>
+	<shipping>
+		<ship_first_name>sfn</ship_first_name>
+		<ship_last_name>sln</ship_last_name>
+		<ship_company_name>scn</ship_company_name>
+		<ship_address_one>sao</ship_address_one>
+		<ship_state_or_province>ssop</ship_state_or_province>
+		<ship_postal_code>spc</ship_postal_code>
+		<ship_country>scount</ship_country>
+		<ship_phone>sp</ship_phone>
+		<ship_fax>sf</ship_fax>
+	</shipping>
+	<billing>
+		<bill_first_name>bfn</bill_first_name>
+		<bill_last_name>bln</bill_last_name>
+		<bill_company_name>bcn</bill_company_name>
+		<bill_address_one>bao</bill_address_one>
+		<bill_state_or_province>bsop</bill_state_or_province>
+		<bill_postal_code>bpc</bill_postal_code>
+		<bill_country>bcount</bill_country>
+		<bill_phone></bill_phone>
+		<bill_fax></bill_fax>
+	</billing>
+	<od_other>
+		<email>bill.smith@example.com</email>
+		<cust_id>customer num</cust_id>
+		<note>these are special instructions</note>
+	</od_other>
+</response>

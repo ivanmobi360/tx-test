@@ -1,0 +1,27 @@
+<ccTxnResponseV1 xmlns="http://www.optimalpayments.com/creditcard/xmlschema/v1">
+  <confirmationNumber>129893119</confirmationNumber>
+  <decision>ACCEPTED</decision>
+  <code>0</code>
+  <description>No Error</description>
+  <authCode>112007</authCode>
+  <avsResponse>E</avsResponse>
+  <cvdResponse>M</cvdResponse>
+  <detail>
+    <tag>InternalResponseCode</tag>
+    <value>0</value>
+  </detail>
+  <detail>
+    <tag>SubErrorCode</tag>
+    <value>0</value>
+  </detail>
+  <detail>
+    <tag>InternalResponseDescription</tag>
+    <value>no_error</value>
+  </detail>
+  <detail>
+    <tag>CurrencyCode</tag>
+    <value>CAD</value>
+  </detail>
+  <txnTime>2012-04-04T12:32:10.133-04:00</txnTime>
+  <duplicateFound>false</duplicateFound>
+</ccTxnResponseV1>

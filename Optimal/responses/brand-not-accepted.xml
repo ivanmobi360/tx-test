@@ -1,0 +1,21 @@
+<ccTxnResponseV1 xmlns="http://www.optimalpayments.com/creditcard/xmlschema/v1">
+  <confirmationNumber>129893362</confirmationNumber>
+  <decision>ERROR</decision>
+  <code>3008</code>
+  <actionCode>D</actionCode>
+  <description>You submitted a card type for which the merchant account is not configured.</description>
+  <detail>
+    <tag>InternalResponseCode</tag>
+    <value>117</value>
+  </detail>
+  <detail>
+    <tag>SubErrorCode</tag>
+    <value>0</value>
+  </detail>
+  <detail>
+    <tag>InternalResponseDescription</tag>
+    <value>brand not accepted</value>
+  </detail>
+  <txnTime>2012-04-04T14:24:38.253-04:00</txnTime>
+  <duplicateFound>false</duplicateFound>
+</ccTxnResponseV1>

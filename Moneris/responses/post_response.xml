@@ -1,0 +1,20 @@
+<?xml version='1.0' standalone='yes'?>
+<response>
+<response_order_id>TX-OLGV3-BDNB1-XIGL9</response_order_id>
+<bank_transaction_id>660109490011480300</bank_transaction_id>
+<response_code>027</response_code>
+<iso_code>01</iso_code>
+<bank_approval_code>003375</bank_approval_code>
+<time_stamp>09:25:17</time_stamp>
+<date_stamp>2013-06-04</date_stamp>
+<trans_name>purchase</trans_name>
+<message>APPROVED           *                    =</message>
+<charge_total>1.00</charge_total>
+<cardholder>bin laden</cardholder>
+<card_num>5454***5454</card_num>
+<card>M</card>
+<expiry_date></expiry_date>
+<result>1</result>
+<rvarcustom>eJxLtDK2qi62MjS3UirJrCgoyo9PLi0uyc9NLcpMUbIuBsoqpeXng1iGRnAlJRV5EFkjAyulkAhdfx/3MGNdJxc/J0PdCE93H0uQnIWVUnJpUVFqXnIl1CBnRxcl61oAShsjaQ==</rvarcustom>
+<transactionKey>2A42fA3a8obp6R5BseZliCJjwLX9F9</transactionKey>
+</response>

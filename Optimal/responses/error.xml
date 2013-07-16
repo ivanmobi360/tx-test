@@ -1,0 +1,26 @@
+<ccTxnResponseV1 xmlns="http://www.optimalpayments.com/creditcard/xmlschema/v1">
+  <confirmationNumber>129890713</confirmationNumber>
+  <decision>ERROR</decision>
+  <code>5023</code>
+  <actionCode>M</actionCode>
+  <description>You submitted an invalid XML request. Please verify your request and retry the transaction.</description>
+  <detail>
+    <tag>InternalResponseCode</tag>
+    <value>24</value>
+  </detail>
+  <detail>
+    <tag>SubErrorCode</tag>
+    <value>0</value>
+  </detail>
+  <detail>
+    <tag>InternalResponseDescription</tag>
+    <value>xml error</value>
+  </detail>
+  <detail>
+    <tag>ErrorDetail</tag>
+    <value>Errors: 
+  Node: state, Detail: string length (string) is greater than maxLength facet (6) for 2</value>
+  </detail>
+  <txnTime>2012-04-03T16:52:12.212-04:00</txnTime>
+  <duplicateFound>false</duplicateFound>
+</ccTxnResponseV1>

@@ -1,0 +1,24 @@
+<ccTxnResponseV1 xmlns="http://www.optimalpayments.com/creditcard/xmlschema/v1">
+  <confirmationNumber>129895898</confirmationNumber>
+  <decision>DECLINED</decision>
+  <code>3007</code>
+  <actionCode>D</actionCode>
+  <description>Your request has failed the AVS check. Note that the amount has still been reserved on the customer's card and will be released in 3-5 business days. Please ensure the billing address is accurate before retrying the transaction.</description>
+  <authCode>113146</authCode>
+  <avsResponse>N</avsResponse>
+  <cvdResponse>M</cvdResponse>
+  <detail>
+    <tag>InternalResponseCode</tag>
+    <value>161</value>
+  </detail>
+  <detail>
+    <tag>SubErrorCode</tag>
+    <value>0</value>
+  </detail>
+  <detail>
+    <tag>InternalResponseDescription</tag>
+    <value>avs failed</value>
+  </detail>
+  <txnTime>2012-04-05T10:42:46.330-04:00</txnTime>
+  <duplicateFound>false</duplicateFound>
+</ccTxnResponseV1>
