@@ -606,6 +606,8 @@ INSERT INTO `location` (`id`, `user_id`, `name`, `street`, `street2`, `country_i
     $cat->assign = '';//?
     $cat->order = '';//?
     
+    $cat->sold_out = '0';
+    
     $cat->insert();
     
     if ($params){
