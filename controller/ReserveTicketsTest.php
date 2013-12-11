@@ -3,6 +3,7 @@
  * I didn't write this module so this is essentially a test runner
  * to reproduce the conditions this module needs to be tested.
  * It expects data to already exists on ticket_pool. For this it seems that it is enough to run website/tableseatingcr.php
+ * Update 2013-12-05: Apparently it is now webiste/assignXMLconstructor.php
  * @author Ivan Rodriguez
  *
  */

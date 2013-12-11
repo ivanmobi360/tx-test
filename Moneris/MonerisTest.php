@@ -14,7 +14,7 @@ use Utils;
  * @author Ivan Rodriguez
  *
  */
-class Payment extends \DatabaseBaseTest{
+class MonerisTest extends \DatabaseBaseTest{
   
     
   function fixture(){

@@ -73,6 +73,7 @@ INSERT INTO `ticket_transaction` (`id`, `category_id`, `user_id`, `price_paid`, 
     $this->db->Query("TRUNCATE TABLE contact");
     $this->db->Query("TRUNCATE TABLE user");
     $this->db->Query("TRUNCATE TABLE category");
+    $this->db->Query("ALTER TABLE `category` AUTO_INCREMENT = 330;");
     $this->db->Query("TRUNCATE TABLE ticket");
     $this->db->Query("ALTER TABLE `ticket` AUTO_INCREMENT = 777;");
     $this->db->Query("TRUNCATE TABLE event");
@@ -105,10 +106,18 @@ INSERT INTO `ticket_transaction` (`id`, `category_id`, `user_id`, `price_paid`, 
     $this->db->Query(file_get_contents(__DIR__ . "/fixture/banner.sql"));
     
     $this->clearReminders();
+
+    $this->resetFees();
     
     $this->insertJohnDoe();
     
   }
+  
+  function resetFees(){
+      $this->db->executeBlock(file_get_contents(__DIR__ . "/fixture/fee-reset.sql"));
+  }
+  
+  
   
   function getCCPurchaseData(){
     return array(
@@ -156,6 +165,20 @@ INSERT INTO `location` (`id`, `user_id`, `name`, `street`, `street2`, `country_i
       $this->db->insert('test', array('title'=>"foo$i", 'content'=>"Some Content $i", 'hits'=>10+$i), true);
      }
     $this->db->commit();
+  }
+  
+  function createModuleFee($name, $fixed, $percentage, $fee_max, $module_id, $is_default=1){
+      return $this->createSpecificFee($name, $fixed, $percentage, $fee_max, $module_id);
+  }
+  
+  //function createSpecificFee($item_id, $item_type, $fixed, $percentage, $fee_max, $module_id ){
+  function createSpecificFee($name, $fixed, $percentage, $fee_max, $module_id, $user_id=null, $event_id=null, $category_id=null ){
+      return \model\SpecificFee::create($name, $fixed, $percentage, $fee_max, $module_id, $user_id, $event_id, $category_id);
+  }
+  
+  //they seem to be changed these values, so we can't hardcore them in the long term. let's try to pick them up from the db
+  protected function currentGlobalFee(){
+      return \model\Fee::getGlobalFee();
   }
 
   
