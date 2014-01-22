@@ -59,23 +59,26 @@ abstract class DatabaseBaseTest extends BaseTest{
   }
   
   protected function clearAll(){
-    
-    $this->db->Query("TRUNCATE TABLE ticket_transaction");
-    //init ticket_transaction 875000000000 count
-    /*$this->db->Query("
-INSERT INTO `ticket_transaction` (`id`, `category_id`, `user_id`, `price_paid`, `currency_id`, `date_processed`, `completed`, `ticket_count`, `txn_id`, `promocode_id`, `discount`, `taxe1`, `taxe2`, `fee`, `cancelled`, `delivery_method`, `reminder`) VALUES
-(875000000000903, 6, 'adminD00', 2.46, 1, '2012-03-30 14:34:33', 1, 1, 'T-CCFZ9-MM5M6-AT4Y9', 0, 0, 0.04, 0.09, 1.14, 0, 'mailed', 0);
-    ");*/
-    
+  	
+  	$tables = ['ticket_transaction', 'location', 'contact', 'user', 'category', 'ticket', 'event', 'event_contact', 'event_email',
+'room_designer', 'ticket_table', 'error_track', 'processor_transactions', 'promocode', 'bo_user', 
+  	'optimal_transactions', 'myvirtual_transactions', 'moneris_transactions',
+'merchant_invoice', 'merchant_invoice_line', 'merchant_invoice_taxe', 'email_processor', 'banner',    ];
+
+  	$this->clearTables($tables);
+  	
     $this->db->Query("ALTER TABLE `ticket_transaction` AUTO_INCREMENT = 875000000000903;");
+    $this->db->Query("ALTER TABLE `category` AUTO_INCREMENT = 330;");
+    $this->db->Query("ALTER TABLE `ticket` AUTO_INCREMENT = 777;");
     
+    /*
+    $this->db->Query("TRUNCATE TABLE ticket_transaction");
     $this->db->Query("TRUNCATE TABLE location");
     $this->db->Query("TRUNCATE TABLE contact");
     $this->db->Query("TRUNCATE TABLE user");
     $this->db->Query("TRUNCATE TABLE category");
-    $this->db->Query("ALTER TABLE `category` AUTO_INCREMENT = 330;");
     $this->db->Query("TRUNCATE TABLE ticket");
-    $this->db->Query("ALTER TABLE `ticket` AUTO_INCREMENT = 777;");
+    
     $this->db->Query("TRUNCATE TABLE event");
     $this->db->Query("TRUNCATE TABLE event_contact");
     $this->db->Query("TRUNCATE TABLE event_email");
@@ -102,15 +105,31 @@ INSERT INTO `ticket_transaction` (`id`, `category_id`, `user_id`, `price_paid`, 
     $this->db->Query("TRUNCATE TABLE email_processor");
     
     
-    $this->db->Query("TRUNCATE TABLE banner");
+    $this->db->Query("TRUNCATE TABLE banner");*/
+    
     $this->db->Query(file_get_contents(__DIR__ . "/fixture/banner.sql"));
-    
     $this->clearReminders();
-
     $this->resetFees();
-    
     $this->insertJohnDoe();
     
+  }
+  
+  function clearTables($tables){
+  	$tables = array_map(function($x){return trim($x);}, $tables);
+  	
+  	$sql = '';
+  	foreach ($tables as $table){
+  		$cnt = (int) $this->db->get_one("SELECT COUNT(*) FROM $table");
+  		Utils::log("cnt of $table is $cnt");
+  		if ( $cnt >0 ){
+  			//Utils::log("will truncate $table");
+  			$sql .= "TRUNCATE TABLE $table;\n";
+  			}
+  		}
+  	$sql  = trim($sql);
+  	if (!empty($sql)){
+  		$this->db->executeBlock($sql);
+  	}
   }
   
   function resetFees(){
@@ -733,6 +752,28 @@ INSERT INTO `location` (`id`, `user_id`, `name`, `street`, `street2`, `country_i
   protected function getIpnString(){
     //paypal
     return "mc_gross=113.93&protection_eligibility=Eligible&address_status=confirmed&payer_id=J9YZSMMYVD3UQ&tax=0.00&address_street=1 Maire-Victorin&payment_date=10:07:39 Aug 05, 2011 PDT&payment_status=Completed&charset=windows-1252&address_zip=M5A 1E1&first_name=Test&mc_fee=3.60&address_country_code=CA&address_name=Test User&notify_version=3.2&custom=eJxLtDKyqi62srBSyi9KSS2Kz0xRsi4GiimZWYAYhoZWSiX5JYk58XmJuanFStaZVobWtQCzZxBa&payer_status=verified&business=acn_1312402113_biz@yahoo.com&address_country=Canada&address_city=Toronto&quantity=1&verify_sign=AFcWxV21C7fd0v3bYYYRCpSSRl31AxeUax.JFWs3tO6a5onB3CDeTRHv&payer_email=gates_1312402289_per@yahoo.com&txn_id=7LM02875RB145043G&payment_type=instant&last_name=User&address_state=Ontario&receiver_email=acn_1312402113_biz@yahoo.com&payment_fee=&receiver_id=CVYPQJ2YRD2JW&txn_type=web_accept&item_name=ACN-PURCHASE&mc_currency=CAD&item_number=68&residence_country=CA&test_ipn=1&handling_amount=0.00&transaction_subject=eJxLtDKyqi62srBSyi9KSS2Kz0xRsi4GiimZWYAYhoZWSiX5JYk58XmJuanFStaZVobWtQCzZxBa&payment_gross=&shipping=0.00&ipn_track_id=-GCFMBpohvqr6iVPhtY9OA";
+  }
+  
+  function createPrintedTickets($nb, $evtid, $cat_id, $cat_name, $fee_fixed=0.6, $fee_percent=0){
+  	$ajax = new \ajax\TicketPrinting();
+  	$data = array(
+  			'eventid' => array($evtid, ''),
+  			'categoryId' => array($cat_id, ''),
+  			'categoryName' => array($cat_name, ''),
+  			'ticketAmount' => array($nb, ''),
+  			'tixproFees' => array(1, ''),
+  			'promocode' => array('', ''),
+  			'tixpro_fee_fix' => $fee_fixed,
+  			'tixpro_fee_percent'=> $fee_percent,
+  			'preActivated' => '0'
+  	);
+  	$_POST = array('tickets' => serialize($data));
+  	$ajax->Process();
+  	Request::clear();
+  }
+  
+  protected function getTicket($code){
+  	return $this->db->auto_array("SELECT * FROM ticket WHERE code=?", $code);
   }
   
   
