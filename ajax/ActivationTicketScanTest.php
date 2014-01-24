@@ -39,7 +39,7 @@ class ActivationTicketScanTest extends \DatabaseBaseTest {
       $this->db->update('ticket', array('code' => $code ), " 1 LIMIT 1");
       
       $ticket = $this->getTicket($code);
-      $this->assertEquals(1, $ticket['paid']); //Apparently, unlike TC, on TX printed tickets are created as paid=1
+      $this->assertEquals(0, $ticket['paid']); //Apparently, unlike TC, on TX printed tickets are created as paid=1. 2014 24 01 Edit: Nope, they're again set to paid=0 
       
       //a quick test of this function, because we added joins to the sql and don't have time to setup a full tour test
       //$ticket2 = \model\Validation::getTicketinEvent($code, $evt->id); //not present in TX
