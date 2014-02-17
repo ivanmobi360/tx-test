@@ -26,7 +26,9 @@ abstract class DatabaseBaseTest extends BaseTest{
   const MONERIS = 7;
   
   //apparently some code was written for this once in a lifetime event - Reserve Tickets, Move Seats
-  const STRANGER_IN_THE_NIGHT_ID = 'a20f69f3';
+  const STRANGER_IN_THE_NIGHT_8_ID = 'a20f69f3';
+  
+  const STRANGERS_IN_THE_NIGHT_10_ID = '28d26a2d'; // Strangers in the Night 10
   
   /**
   * Generic coupon code used in 
@@ -350,6 +352,7 @@ INSERT INTO `location` (`id`, `user_id`, `name`, `street`, `street2`, `country_i
     $this->db->update('event_contact', array( 'event_id' => $new_event_id ), "event_id=?", $event_id);
     $this->db->update('event_email', array( 'event_id' => $new_event_id ), "event_id=?", $event_id);
     $this->db->update('category', array( 'event_id' => $new_event_id ), "event_id=?", $event_id);
+    return $new_event_id;
   }
   
   function setEventPaymentMethodId($evt, $payment_method_id){

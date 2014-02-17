@@ -27,8 +27,8 @@ class ReserveTicketsTest extends \DatabaseBaseTest{
     //A merchant creates some event with 3 categories. (Basic->Open, Premium->Table As seats, VIP -> Table )
     $seller = $this->createUser('seller');
     
-    $evt = $this->createEvent("Stranger in the Night", $seller->id, $this->createLocation()->id);
-    $this->setEventId($evt, self::STRANGER_IN_THE_NIGHT_ID);
+    $evt = $this->createEvent("Stranger in the Night 8", $seller->id, $this->createLocation()->id);
+    $this->setEventId($evt, self::STRANGER_IN_THE_NIGHT_8_ID);
     $cat = $this->createCategory('Stranger 243', $evt->id, 100);
     $this->setCategoryId($cat, 243);
     
