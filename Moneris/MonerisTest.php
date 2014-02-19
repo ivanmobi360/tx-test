@@ -17,7 +17,7 @@ use Utils;
 class MonerisTest extends \DatabaseBaseTest{
   
     
-  function fixture(){
+  protected function prePayState(){
     $this->clearAll();
     
     
@@ -46,7 +46,7 @@ class MonerisTest extends \DatabaseBaseTest{
   
   function testSuccess(){
     
-    $this->fixture();
+    $this->prePayState();
     
     $this->buyer->addToCart($this->cat->id, 1); //cart in session
     
@@ -76,7 +76,7 @@ class MonerisTest extends \DatabaseBaseTest{
   
   function testListener(){
 
-      $this->fixture();
+      $this->prePayState();
       
       $buyer = $this->buyer;
       $buyer->addToCart($this->cat->id, 1); //cart in session
@@ -114,11 +114,11 @@ class MonerisTest extends \DatabaseBaseTest{
   }
   
   /**
-   * This test fails if $this->handlePurchaseResponse() is not uncommented in \controller\Moneris
+   * This test fails if $this->handlePurchaseResponse() is commented out in \controller\Moneris
    */
-  function xtestApprovedUrl(){
+  function testApprovedUrl(){
       //Moneris is setup to point to this url
-      $this->fixture();
+      $this->prePayState();
       
       $buyer = $this->buyer;
       $buyer->addToCart($this->cat->id, 1); //cart in session
@@ -133,7 +133,7 @@ class MonerisTest extends \DatabaseBaseTest{
       
       //Mimic a post response;
       $_POST['xml_response'] = $xml;
-      $cnt = new \controller\Moneris();
+      $cnt = new \Moneris\MockMonerisController(); //new \controller\Moneris();
       
       $this->assertEquals(self::MONERIS, $this->db->get_one("SELECT payment_method_id FROM processor_transactions LIMIT 1"));
       $this->assertRows(1, 'moneris_transactions');
