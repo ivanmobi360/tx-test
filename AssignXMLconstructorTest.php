@@ -17,20 +17,36 @@ class AssignXMLconstructorTest extends DatabaseBaseTest{
     $this->create_Stranger_10_Tickets();
   }
   
-  function test_THE_FIRM(){
+  function testTheFirm(){
   	
 	$this->clearAll();
+	
+	//$this->db->beginTransaction();
+	
 	$seller = $this->createUser('seller');
 	$foo = $this->createUser('foo');
+	
+	$evt = $this->createEvent('Simple Event', $seller->id, $this->createLocation()->id, $this->dateAt("+5 day"));
+	$this->setEventId($evt, 's1mpl33v');
+	$this->setEventPaymentMethodId($evt, self::MONERIS);
+	$cat = $this->createCategory('Normal', $evt->id, 45.00);
 
 	$evt = $this->createEvent('Strangers 10', $seller->id, $this->createLocation()->id, $this->dateAt("+5 day"));
 	$this->setEventId($evt, self::STRANGERS_IN_THE_NIGHT_10_ID);
 	
-	$cat = $this->createCategory('Normal', $evt->id, 45);
+	/*$cat = $this->createCategory('Normal', $evt->id, 45);
 	$this->setCategoryId($cat, 380);
 	
 	$cat = $this->createCategory('VIP', $evt->id, 45);
-	$this->setCategoryId($cat, 381);
+	$this->setCategoryId($cat, 381);*/
+	//for the time being we'll just dump the live database contents to reproduce the table logic
+	$this->db->Query("
+INSERT INTO `category` (`id`, `name`, `description`, `event_id`, `category_id`, `price`, `capacity`, `capacity_max`, `capacity_min`, `overbooking`, `tax_inc`, `fee_inc`, `cc_fee_inc`, `fee_id`, `cc_fee_id`, `as_seats`, `hidden`, `locked_fee`, `assign`, `order`, `sold_out`) VALUES
+(378, '', '', '28d26a2d', NULL, '500.00', 10, 10, 0, 0, 1, 1, 1, NULL, NULL, 0, 1, NULL, 0, 0, 0),
+(379, 'Single Basic Seating', 'Open Bar from 6:00 PM – 1:00 AM </br> Single seating</br> Access to all restaurants and entertainment</br> ** Get upgrade to “ Preferred Table Seating “ by completing a table of ten(10) seats with friends and/or  family !!', '28d26a2d', NULL, '200.00', 10, 10, 0, 0, 1, 1, 1, NULL, NULL, 1, 0, NULL, 0, 0, 0),
+(380, 'VIP Premium Seating', 'Premium Open Bar from 5:00 PM – 1:00 AM </br>VIP Valet Parking </br>Front Of The Line Drive Home Service </br>Private Preferred Table Seating for 10 </br>Dedicated servers </br>Access to VIP Lounge</br>Access to all restaurants and entertainment</br>Early entrance option available at 5 PM', '28d26a2d', 378, '5000.00', 100, 100, 0, 0, 1, 1, 1, NULL, NULL, 0, 0, NULL, 1, 0, 0),
+(381, 'Standard Preferred Seating', 'Open Bar from 6:00 PM – 1:00 AM </br>Table seating for 10 </br>Access to all restaurants and entertainment', '28d26a2d', 379, '2000.00', 300, 300, 0, 0, 1, 1, 1, NULL, NULL, 1, 0, NULL, 1, 0, 0);
+	        ");
 	
 	//fill up ticket pool
 	$this->create_Stranger_10_Tickets();
@@ -39,7 +55,14 @@ class AssignXMLconstructorTest extends DatabaseBaseTest{
 	
 	//fix some malformed data for now
 	$this->db->update('category', array('tax_inc'=>1, 'fee_inc'=>1, 'cc_fee_inc'=>1), "event_id=?", $event_id);
-	$this->db->update('category', array('hidden'=>1), "event_id=? AND category_id IS NULL", $event_id);
+	//$this->db->update('category', array('hidden'=>1), "event_id=? AND category_id IS NULL", $event_id);
+	
+	//now we need to create the seats of the firm
+	$pool = new tool\TheFirmAssignXmlGenerator();
+	$pool->build();
+	\Utils::log(__METHOD__ . " xml: \n" . $pool->getAssignXml() );
+	
+	//$this->db->commit();
 	
   }
   
@@ -59,9 +82,12 @@ class AssignXMLconstructorTest extends DatabaseBaseTest{
   	
   	$cont = new controller\Newevent(); //all the logic in the constructor haha
   	
-  	$id = $this->getLastEventId();
-  	$id = $this->changeEventId($id, 'thefirm1');
-  	return $id;
+  	$event_id = $this->getLastEventId();
+  	$event_id = $this->changeEventId($event_id, 'thefirm1');
+  	
+  	$this->setEventPaymentMethodId(new \model\Events($event_id), self::MONERIS);
+  	
+  	return $event_id;
   }
   
   protected function get_THE_FIRM_create_data(){
