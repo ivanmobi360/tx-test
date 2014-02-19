@@ -1,77 +1,74 @@
 <?php
+use tool\Request;
+
 /**
  * Simple wrapper to be able to inspect and test the website/assignXMLconstructor.php test
  * 
  */
 class AssignXMLconstructorTest extends DatabaseBaseTest{
   
-  function setUp(){
-    parent::setUp();
-    
-    $this->db->Query("TRUNCATE TABLE ticket_pool");
-    
-  }
-
   //simple test runner
   function testRun(){
     $this->create_Stranger_10_Tickets();
   }
   
   function testTheFirm(){
+      global $argv;
+      if (!in_array('no-clear', $argv)){
   	
-	$this->clearAll();
+    	$this->clearAll();
+    	$this->db->Query("TRUNCATE TABLE ticket_pool");
+    	$seller = $this->createUser('seller');
+    	$foo = $this->createUser('foo');
+    	
+    	$evt = $this->createEvent('Simple Event', $seller->id, $this->createLocation()->id, $this->dateAt("+5 day"));
+    	$this->setEventId($evt, 's1mpl33v');
+    	$this->setEventPaymentMethodId($evt, self::MONERIS);
+    	$cat = $this->createCategory('Normal', $evt->id, 45.00);
+    
+    	$this->createStrangers10($seller, false);
+    	$event_id = $this->createTheFirm($seller, false);
+    	
+    	$this->db->Query("TRUNCATE TABLE ticket_pool");
+    	$this->db->beginTransaction();
+    	$this->db->executeBlock(file_get_contents(__DIR__ . "/fixture/ticket_pool.sql"));
+    	$this->db->commit();
+    	
+      }
 	
-	//$this->db->beginTransaction();
+	//Now we'll do some purchases. First we'll do a purchase of a map selected 4-8 table
+	$web = new \WebUser($this->db); $web->login('foo@blah.com'); //login for laughs
+	Request::clear();
+	$_POST = $this->get_4_8_purchase_request();
+	$_GET = array('page' => 'thefirmpay');
+	$cont = new \controller\Assignseating();
 	
-	$seller = $this->createUser('seller');
-	$foo = $this->createUser('foo');
-	
-	$evt = $this->createEvent('Simple Event', $seller->id, $this->createLocation()->id, $this->dateAt("+5 day"));
-	$this->setEventId($evt, 's1mpl33v');
-	$this->setEventPaymentMethodId($evt, self::MONERIS);
-	$cat = $this->createCategory('Normal', $evt->id, 45.00);
-
-	$evt = $this->createEvent('Strangers 10', $seller->id, $this->createLocation()->id, $this->dateAt("+5 day"));
-	$this->setEventId($evt, self::STRANGERS_IN_THE_NIGHT_10_ID);
-	
-	/*$cat = $this->createCategory('Normal', $evt->id, 45);
-	$this->setCategoryId($cat, 380);
-	
-	$cat = $this->createCategory('VIP', $evt->id, 45);
-	$this->setCategoryId($cat, 381);*/
-	//for the time being we'll just dump the live database contents to reproduce the table logic
-	$this->db->Query("
+  }
+  
+  protected function createStrangers10($seller, $create_pool = true){
+      $evt = $this->createEvent('Strangers 10', $seller->id, $this->createLocation()->id, $this->dateAt("+5 day"));
+      $this->setEventId($evt, self::STRANGERS_IN_THE_NIGHT_10_ID);
+      
+      //for the time being we'll just dump the live database contents to reproduce the table logic
+      $this->db->Query("
 INSERT INTO `category` (`id`, `name`, `description`, `event_id`, `category_id`, `price`, `capacity`, `capacity_max`, `capacity_min`, `overbooking`, `tax_inc`, `fee_inc`, `cc_fee_inc`, `fee_id`, `cc_fee_id`, `as_seats`, `hidden`, `locked_fee`, `assign`, `order`, `sold_out`) VALUES
 (378, '', '', '28d26a2d', NULL, '500.00', 10, 10, 0, 0, 1, 1, 1, NULL, NULL, 0, 1, NULL, 0, 0, 0),
 (379, 'Single Basic Seating', 'Open Bar from 6:00 PM – 1:00 AM </br> Single seating</br> Access to all restaurants and entertainment</br> ** Get upgrade to “ Preferred Table Seating “ by completing a table of ten(10) seats with friends and/or  family !!', '28d26a2d', NULL, '200.00', 10, 10, 0, 0, 1, 1, 1, NULL, NULL, 1, 0, NULL, 0, 0, 0),
 (380, 'VIP Premium Seating', 'Premium Open Bar from 5:00 PM – 1:00 AM </br>VIP Valet Parking </br>Front Of The Line Drive Home Service </br>Private Preferred Table Seating for 10 </br>Dedicated servers </br>Access to VIP Lounge</br>Access to all restaurants and entertainment</br>Early entrance option available at 5 PM', '28d26a2d', 378, '5000.00', 100, 100, 0, 0, 1, 1, 1, NULL, NULL, 0, 0, NULL, 1, 0, 0),
 (381, 'Standard Preferred Seating', 'Open Bar from 6:00 PM – 1:00 AM </br>Table seating for 10 </br>Access to all restaurants and entertainment', '28d26a2d', 379, '2000.00', 300, 300, 0, 0, 1, 1, 1, NULL, NULL, 1, 0, NULL, 1, 0, 0);
 	        ");
-	
-	//fill up ticket pool
-	$this->create_Stranger_10_Tickets();
-	
-	$event_id = $this->createTheFirm($seller);
-	
-	//fix some malformed data for now
-	$this->db->update('category', array('tax_inc'=>1, 'fee_inc'=>1, 'cc_fee_inc'=>1), "event_id=?", $event_id);
-	//$this->db->update('category', array('hidden'=>1), "event_id=? AND category_id IS NULL", $event_id);
-	
-	//now we need to create the seats of the firm
-	$pool = new tool\TheFirmAssignXmlGenerator();
-	$pool->build();
-	\Utils::log(__METHOD__ . " xml: \n" . $pool->getAssignXml() );
-	
-	//$this->db->commit();
-	
+      
+      //fill up ticket pool
+      if($create_pool)
+          $this->create_Stranger_10_Tickets();      
   }
   
-  function create_Stranger_10_Tickets(){
+  protected function create_Stranger_10_Tickets(){
   	//this really heavily on some external file that changes every year. don't expect consistent results. Last time it generated 2060 tickets/rows
   	require_once PATH_INCLUDES .'../website/assignXMLconstructor.php';
   }
   
-  protected function createTheFirm($seller){
+  protected function createTheFirm($seller, $create_pool= true){
   	//we need to log in to create
   	$client = new WebUser($this->db);
   	$client->login($seller->username);
@@ -86,6 +83,20 @@ INSERT INTO `category` (`id`, `name`, `description`, `event_id`, `category_id`, 
   	$event_id = $this->changeEventId($event_id, 'thefirm1');
   	
   	$this->setEventPaymentMethodId(new \model\Events($event_id), self::MONERIS);
+  	
+  	//fix some malformed data for now
+  	$this->db->update('category', array('tax_inc'=>1, 'fee_inc'=>1, 'cc_fee_inc'=>1), "event_id=?", $event_id);
+  	//make the tables assign=1
+  	$this->db->update('category', array('assign'=>1), "event_id=?", $event_id);
+  	//$this->db->update('category', array('hidden'=>1), "event_id=? AND category_id IS NULL", $event_id);
+  	
+  	//now we need to create the seats of the firm
+  	if($create_pool){
+  	    $pool = new tool\TheFirmAssignXmlGenerator();
+  	    $pool->build();
+  	    \Utils::log(__METHOD__ . " xml: \n" . $pool->getAssignXml() );
+  	}
+  	
   	
   	return $event_id;
   }
@@ -181,6 +192,62 @@ INSERT INTO `category` (`id`, `name`, `description`, `event_id`, `category_id`, 
   			
 	  'create' => 'do',
 	);
+  }
+  
+  function get_4_8_purchase_request(){
+      return array (
+  'reg_new_username' => '',
+  'reg_confirm_username' => '',
+  'reg_new_password' => '',
+  'reg_confirm_password' => '',
+  'reg_language_id' => '',
+  'reg_name' => '',
+  'reg_home_phone' => '',
+  'reg_phone' => '',
+  'reg_l_street' => '',
+  'reg_l_country_id' => '',
+  'reg_l_state' => '',
+  'reg_l_city' => '',
+  'reg_l_zipcode' => '',
+  'reg_l_street2' => '',
+  'reg_l_state_id' => '',
+  'user_id' => 'foo',
+  'total' => 'CAD 240.00',
+  382 => '0',
+  'cat_list' => 
+  array (
+    0 => '382',
+    1 => '383',
+    2 => '384',
+    3 => '385',
+    4 => '386',
+    5 => '387',
+    6 => '388',
+    7 => '389',
+  ),
+  383 => '0',
+  384 => '0',
+  385 => '0',
+  386 => '0',
+  387 => '0',
+  388 => '1',
+  389 => '0',
+  'table' => 
+  array (
+    0 => '388-3-1',
+  ),
+  'cc_holder_name' => 'Chuck Norris',
+  'cc_number' => '5301250070000050',
+  'cc_ccv' => '123',
+  'cc_month' => '01',
+  'cc_year' => '2017',
+  'bil_name' => 'Calle 1',
+  'bil_city' => 'Quebec',
+  'bil_state' => 'Quebec',
+  'bil_country' => 'Canada',
+  'bil_zipcode' => 'BB',
+  'mailing_list' => 'yes',
+);
   }
 
   
