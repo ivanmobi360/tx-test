@@ -740,8 +740,13 @@ INSERT INTO `location` (`id`, `user_id`, `name`, `street`, `street2`, `country_i
      ));
   }
   
-  protected function assertRows($total, $table){
-    $this->assertEquals($total, $this->db->get_one("SELECT COUNT(*) FROM $table" ));
+    protected function assertRows($total, $table, $where='', $params=array()){
+      
+      if (!empty($where)){
+          $where = 'WHERE '. \Database::formatQuery($where, $params);
+      }
+      
+    $this->assertEquals($total, $this->db->get_one("SELECT COUNT(*) FROM $table $where" ));
   }
   
   function dateAt($offset){

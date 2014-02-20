@@ -39,9 +39,35 @@ class AssignXMLconstructorTest extends DatabaseBaseTest{
 	//Now we'll do some purchases. First we'll do a purchase of a map selected 4-8 table
 	$web = new \WebUser($this->db); $web->login('foo@blah.com'); //login for laughs
 	Request::clear();
-	$_POST = $this->get_4_8_purchase_request();
+	$_POST = $this->purchase_4_8_request();
 	$_GET = array('page' => 'thefirmpay');
 	$cont = new \controller\Assignseating();
+	
+	//Expect a transaction
+	$this->assertRows(1, 'ticket_transaction', " ticket_count=8 AND completed=1 ");
+	$this->assertRows(8, 'ticket');
+	$this->assertRows(8, 'ticket_pool', " `table`=3 AND ticket_id IS NOT NULL AND txn_id IS NOT NULL");
+	$this->assertEquals(8, $this->db->get_one("SELECT COUNT(ticket.id) FROM ticket
+INNER JOIN ticket_pool on ticket.code = ticket_pool.code AND ticket.category_id = 388")); //tickets are synched
+	
+	//it should not be possible to buy the same table again
+	Request::clear();
+	$_POST = $this->purchase_4_8_request();
+	$_GET = array('page' => 'thefirmpay');
+	$cont = new \controller\Assignseating();
+	$this->assertRows(1, 'ticket_transaction', " ticket_count=8 AND completed=1 ");
+	
+	//now let's buy 4 seats of the only 4-6 table
+	Request::clear();
+	$_POST = $this->purchase_4_6_request();
+	$_GET = array('page' => 'thefirmpay');
+	$cont = new \controller\Assignseating();
+	$txn_id = $cont->txn_id;
+	$this->assertRows(1, 'ticket_transaction', " ticket_count=4 AND completed=1 AND txn_id=?", $txn_id);
+	$this->assertRows(12, 'ticket');
+	$this->assertRows(4, 'ticket_pool', " ticket_id IS NOT NULL AND txn_id =?", $txn_id);
+	
+	//if we do the same purchase again, for the remainder 2 tickets, it should fail
 	
   }
   
@@ -194,8 +220,96 @@ INSERT INTO `category` (`id`, `name`, `description`, `event_id`, `category_id`, 
 	);
   }
   
-  function get_4_8_purchase_request(){
-      return array (
+  protected function purchase_4_8_request(){
+      return $this->purchase_request( array (
+  
+      'total' => 'CAD 240.00',
+       382 => '0',
+      'cat_list' => 
+      array (
+        0 => '382',
+        1 => '383',
+        2 => '384',
+        3 => '385',
+        4 => '386',
+        5 => '387',
+        6 => '388',
+        7 => '389',
+      ),
+      383 => '0',
+      384 => '0',
+      385 => '0',
+      386 => '0',
+      387 => '0',
+      388 => '1',
+      389 => '0',
+      'table' => 
+      array (
+        0 => '388-3-1',
+          )
+        )
+       );
+  }
+  
+  //we pick up table 4 from the map, just 4 seats
+  protected function purchase_4_6_request(){
+      return $this->purchase_request( array (
+    'total' => 'CAD 120.00',
+  382 => '0',
+  'cat_list' => 
+  array (
+    0 => '382',
+    1 => '383',
+    2 => '384',
+    3 => '385',
+    4 => '386',
+    5 => '387',
+    6 => '388',
+    7 => '389',
+  ),
+  383 => '4',
+  384 => 'undefined',
+  385 => '0',
+  386 => '0',
+  387 => '0',
+  388 => 'undefined',
+  389 => '0',
+  'table' => 
+  array (
+    0 => '383-4-4',
+  ),
+  )
+      );
+  }
+  
+  protected function purchase_4_6_remainder(){
+      return $this->purchase_request( array (
+  'total' => 'CAD 60.00',
+  382 => '0',
+  'cat_list' => 
+  array (
+    0 => '382',
+    1 => '383',
+    2 => '384',
+    3 => '385',
+    4 => '386',
+    5 => '387',
+    6 => '388',
+    7 => '389',
+  ),
+  383 => '2',
+  384 => 'undefined',
+  385 => '0',
+  386 => '0',
+  387 => 'undefined',
+  388 => 'undefined',
+  389 => '0',
+              )
+);
+  }
+  
+  protected function purchase_request($data, $extra=array()){
+      $base = array (
   'reg_new_username' => '',
   'reg_confirm_username' => '',
   'reg_new_password' => '',
@@ -211,43 +325,22 @@ INSERT INTO `category` (`id`, `name`, `description`, `event_id`, `category_id`, 
   'reg_l_zipcode' => '',
   'reg_l_street2' => '',
   'reg_l_state_id' => '',
+              
   'user_id' => 'foo',
-  'total' => 'CAD 240.00',
-  382 => '0',
-  'cat_list' => 
-  array (
-    0 => '382',
-    1 => '383',
-    2 => '384',
-    3 => '385',
-    4 => '386',
-    5 => '387',
-    6 => '388',
-    7 => '389',
-  ),
-  383 => '0',
-  384 => '0',
-  385 => '0',
-  386 => '0',
-  387 => '0',
-  388 => '1',
-  389 => '0',
-  'table' => 
-  array (
-    0 => '388-3-1',
-  ),
-  'cc_holder_name' => 'Chuck Norris',
+              
+  'cc_holder_name' => 'John Smith',
   'cc_number' => '5301250070000050',
   'cc_ccv' => '123',
   'cc_month' => '01',
-  'cc_year' => '2017',
+  'cc_year' => '2030',
   'bil_name' => 'Calle 1',
   'bil_city' => 'Quebec',
   'bil_state' => 'Quebec',
   'bil_country' => 'Canada',
   'bil_zipcode' => 'BB',
-  'mailing_list' => 'yes',
-);
+  'mailing_list' => 'yes'
+    );
+      return $data + array_merge($base, $extra);
   }
 
   
