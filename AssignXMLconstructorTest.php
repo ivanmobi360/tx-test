@@ -12,29 +12,34 @@ class AssignXMLconstructorTest extends DatabaseBaseTest{
     $this->create_Stranger_10_Tickets();
   }
   
-  function testTheFirm(){
+  protected function createState(){
       global $argv;
       if (!in_array('no-clear', $argv)){
-  	
-    	$this->clearAll();
-    	$this->db->Query("TRUNCATE TABLE ticket_pool");
-    	$seller = $this->createUser('seller');
-    	$foo = $this->createUser('foo');
-    	
-    	$evt = $this->createEvent('Simple Event', $seller->id, $this->createLocation()->id, $this->dateAt("+5 day"));
-    	$this->setEventId($evt, 's1mpl33v');
-    	$this->setEventPaymentMethodId($evt, self::MONERIS);
-    	$cat = $this->createCategory('Normal', $evt->id, 45.00);
-    
-    	$this->createStrangers10($seller, false);
-    	$event_id = $this->createTheFirm($seller, false);
-    	
-    	$this->db->Query("TRUNCATE TABLE ticket_pool");
-    	$this->db->beginTransaction();
-    	$this->db->executeBlock(file_get_contents(__DIR__ . "/fixture/ticket_pool.sql"));
-    	$this->db->commit();
-    	
+           
+          $this->clearAll();
+          $this->db->Query("TRUNCATE TABLE ticket_pool");
+          $seller = $this->createUser('seller');
+          $foo = $this->createUser('foo');
+           
+          $evt = $this->createEvent('Simple Event', $seller->id, $this->createLocation()->id, $this->dateAt("+5 day"));
+          $this->setEventId($evt, 's1mpl33v');
+          $this->setEventPaymentMethodId($evt, self::MONERIS);
+          $cat = $this->createCategory('Normal', $evt->id, 45.00);
+      
+          $this->createStrangers10($seller, false);
+          $event_id = $this->createTheFirm($seller, false);
+           
+          $this->db->Query("TRUNCATE TABLE ticket_pool");
+          $this->db->beginTransaction();
+          $this->db->executeBlock(file_get_contents(__DIR__ . "/fixture/ticket_pool.sql"));
+          $this->db->commit();
+           
       }
+  }
+  
+  function testTheFirm(){
+      
+      $this->createState();
 	
 	//Now we'll do some purchases. First we'll do a purchase of a map selected 4-8 table
 	$web = new \WebUser($this->db); $web->login('foo@blah.com'); //login for laughs
@@ -68,7 +73,63 @@ INNER JOIN ticket_pool on ticket.code = ticket_pool.code AND ticket.category_id 
 	$this->assertRows(4, 'ticket_pool', " ticket_id IS NOT NULL AND txn_id =?", $txn_id);
 	
 	//if we do the same purchase again, for the remainder 2 tickets, it should fail
+	Request::clear();
+	$_POST = $this->purchase_4_6_remainder();
+	$_GET = array('page' => 'thefirmpay');
+	$cont = new \controller\Assignseating();
+	$this->assertFalse($cont->ok);
 	
+  }
+  
+  function testRegistration(){
+      $this->createState();
+      
+      //force a logout
+      $web = new \WebUser($this->db); $web->login('foo@blah.com'); $web->logout();
+      
+      Utils::clearLog();
+      
+      $this->clearRequest();
+      $_POST = $this->purchase_register();
+      $_GET = array('page' => 'thefirmpay');
+      $cont = new \controller\Assignseating();
+      
+      //Expect a transaction
+      $this->assertRows(1, 'ticket_transaction');
+      $this->assertRows(2, 'ticket');
+
+      //return;
+      
+      //if some other user tries to purchase the same table, it should fail;
+      $web = new \WebUser($this->db); $web->login('foo@blah.com'); Utils::clearLog();
+      $_POST = $this->purchase_2_4_remainder();
+      $_GET = array('page' => 'thefirmpay');
+      $cont = new \controller\Assignseating();
+      $this->assertFalse($cont->ok);
+  }
+  
+  /**
+   * Therea are two [6-10] tables
+   * Buy iconmpletely the 2 tables (IT)
+   * Do a third purchase from cart (AT and At).
+   * Purchase should fail
+   */
+  function test_blocked(){
+      $this->createState();
+      
+      $web = new \WebUser($this->db); $web->login('foo@blah.com');
+
+      $this->clearRequest();
+      $_POST = $this->purchase_6_10();
+      $_GET = array('page' => 'thefirmpay');
+      $cont = new \controller\Assignseating();
+      $this->assertTrue($cont->ok);
+      
+      $this->clearRequest();
+      $_POST = $this->purchase_6_10('2');
+      $_GET = array('page' => 'thefirmpay');
+      $cont = new \controller\Assignseating();
+      $this->assertTrue($cont->ok);
   }
   
   protected function createStrangers10($seller, $create_pool = true){
@@ -224,18 +285,7 @@ INSERT INTO `category` (`id`, `name`, `description`, `event_id`, `category_id`, 
       return $this->purchase_request( array (
   
       'total' => 'CAD 240.00',
-       382 => '0',
-      'cat_list' => 
-      array (
-        0 => '382',
-        1 => '383',
-        2 => '384',
-        3 => '385',
-        4 => '386',
-        5 => '387',
-        6 => '388',
-        7 => '389',
-      ),
+      382 => '0',
       383 => '0',
       384 => '0',
       385 => '0',
@@ -254,19 +304,8 @@ INSERT INTO `category` (`id`, `name`, `description`, `event_id`, `category_id`, 
   //we pick up table 4 from the map, just 4 seats
   protected function purchase_4_6_request(){
       return $this->purchase_request( array (
-    'total' => 'CAD 120.00',
+  'total' => 'CAD 120.00',
   382 => '0',
-  'cat_list' => 
-  array (
-    0 => '382',
-    1 => '383',
-    2 => '384',
-    3 => '385',
-    4 => '386',
-    5 => '387',
-    6 => '388',
-    7 => '389',
-  ),
   383 => '4',
   384 => 'undefined',
   385 => '0',
@@ -286,17 +325,7 @@ INSERT INTO `category` (`id`, `name`, `description`, `event_id`, `category_id`, 
       return $this->purchase_request( array (
   'total' => 'CAD 60.00',
   382 => '0',
-  'cat_list' => 
-  array (
-    0 => '382',
-    1 => '383',
-    2 => '384',
-    3 => '385',
-    4 => '386',
-    5 => '387',
-    6 => '388',
-    7 => '389',
-  ),
+
   383 => '2',
   384 => 'undefined',
   385 => '0',
@@ -306,6 +335,25 @@ INSERT INTO `category` (`id`, `name`, `description`, `event_id`, `category_id`, 
   389 => '0',
               )
 );
+  }
+  
+  //use this to simulate the test of purchasing the same 2_4 table (the one called '13') that was previously purchased. This should fail
+  protected function purchase_2_4_remainder(){
+      return $this->purchase_request(array(
+          'total' => 'CAD 50.00',
+          382 => '2',
+          383 => '0',
+          384 => '0',
+          385 => '0',
+          386 => '0',
+          387 => '0',
+          388 => '0',
+          389 => '0',
+          'table' =>
+              array (
+                      0 => '382-13-2',
+              ),              
+          ));
   }
   
   protected function purchase_request($data, $extra=array()){
@@ -328,6 +376,18 @@ INSERT INTO `category` (`id`, `name`, `description`, `event_id`, `category_id`, 
               
   'user_id' => 'foo',
               
+  'cat_list' =>
+  array (
+          0 => '382',
+          1 => '383',
+          2 => '384',
+          3 => '385',
+          4 => '386',
+          5 => '387',
+          6 => '388',
+          7 => '389',
+  ),              
+              
   'cc_holder_name' => 'John Smith',
   'cc_number' => '5301250070000050',
   'cc_ccv' => '123',
@@ -342,7 +402,77 @@ INSERT INTO `category` (`id`, `name`, `description`, `event_id`, `category_id`, 
     );
       return $data + array_merge($base, $extra);
   }
-
   
+  protected function purchase_register(){
+      return array (
+  'reg_new_username' => 'baz@blah.com',
+  'reg_confirm_username' => 'baz@blah.com',
+  'reg_new_password' => '123456',
+  'reg_confirm_password' => '123456',
+  'reg_language_id' => 'en',
+  'reg_name' => 'Some baz',
+  'reg_home_phone' => '123456',
+  'reg_phone' => '',
+  'reg_l_street' => 'Calle 1',
+  'reg_l_country_id' => '124',
+  'reg_l_state' => '',
+  'reg_l_city' => 'Quebec',
+  'reg_l_zipcode' => '75211',
+  'reg_l_street2' => '',
+  'reg_l_state_id' => '4',
+  'total' => 'CAD 50.00',
+  382 => '2',
+  'cat_list' => 
+  array (
+    0 => '382',
+    1 => '383',
+    2 => '384',
+    3 => '385',
+    4 => '386',
+    5 => '387',
+    6 => '388',
+    7 => '389',
+  ),
+  383 => '0',
+  384 => 'undefined',
+  385 => '0',
+  386 => '0',
+  387 => 'undefined',
+  388 => 'undefined',
+  389 => '0',
+  'table' => 
+  array (
+    0 => '382-13-2',
+  ),
+  'cc_holder_name' => 'sdf asdf',
+  'cc_number' => '5301250070000050',
+  'cc_ccv' => '12345',
+  'cc_month' => '01',
+  'cc_year' => '2026',
+  'bil_name' => 'Calle 1',
+  'bil_city' => 'Quebec',
+  'bil_state' => 'Alberta',
+  'bil_country' => '124',
+  'bil_zipcode' => '75211',
+);
+  }
+
+  protected function purchase_6_10($table_name=1, $nb_seats=7){
+      return $this->purchase_request(array(
+              'total' => 'CAD ' . ($nb_seats * 30.00) ,
+              382 => '0',
+              383 => '0',
+              384 => '0',
+              385 => $nb_seats,// '7',
+              386 => '0',
+              387 => '0',
+              388 => '0',
+              389 => '0',
+              'table' =>
+              array (
+                      0 => '385-' . $table_name . '-' . $nb_seats,
+                  ),
+              ));
+  }
 }
 
