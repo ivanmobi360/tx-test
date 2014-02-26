@@ -88,7 +88,7 @@ class MonerisTest extends \DatabaseBaseTest{
       Request::clear();
       $_POST = $_GET = array();
       
-      $xml = $this->createXml($buyer->id, $txn_id, $total);
+      $xml = MonerisTestTools::createXml($buyer->id, $txn_id, $total);
       
       //Mimic a post response;
       Utils::clearLog();
@@ -129,7 +129,7 @@ class MonerisTest extends \DatabaseBaseTest{
       Utils::clearLog();
       Request::clear();
       
-      $xml = $this->createXml($buyer->id, $txn_id, $total);
+      $xml = MonerisTestTools::createXml($buyer->id, $txn_id, $total);
       
       //Mimic a post response;
       $_POST['xml_response'] = $xml;
@@ -138,42 +138,6 @@ class MonerisTest extends \DatabaseBaseTest{
       $this->assertEquals(self::MONERIS, $this->db->get_one("SELECT payment_method_id FROM processor_transactions LIMIT 1"));
       $this->assertRows(1, 'moneris_transactions');
       $this->assertRows(1, 'ticket');
-  }
-  
-  function createXml($buyer_id, $txn_id, $total, $seller='seller' ){
-      $xml = file_get_contents(__DIR__ . '/responses/post_response2.xml');
-      
-      //lets override the template response
-      $data = json_decode(json_encode((array)simplexml_load_string($xml)),1);
-      $data['rvarcustom'] = \model\Payment::createCustom(array(
-              'tixpro_customerid' => $buyer_id
-              , 'tixpro_txnid' => $txn_id //$this->db->get_one("SELECT txn_id FROM ticket_transaction LIMIT 1")
-              , 'tixpro_merchantid' => $seller
-              , 'currency' => 'CAD'
-      ));
-      $data['charge_total'] = $total;
-      $new_xml = new \SimpleXMLElement("<?xml version=\"1.0\"?><response></response>");
-      $this->array_to_xml($data, $new_xml);
-      $xml = $new_xml->asXML();
-      return $xml;
-  }
-  
-  // function defination to convert array to xml
-  function array_to_xml($student_info, &$xml_student_info) {
-      foreach($student_info as $key => $value) {
-          if(is_array($value)) {
-              if(!is_numeric($key)){
-                  $subnode = $xml_student_info->addChild("$key");
-                  $this->array_to_xml($value, $subnode);
-              }
-              else{
-                  $this->array_to_xml($value, $xml_student_info);
-              }
-          }
-          else {
-              $xml_student_info->addChild("$key","$value");
-          }
-      }
   }
 
  
