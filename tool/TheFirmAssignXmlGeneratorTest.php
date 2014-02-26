@@ -1,6 +1,6 @@
 <?php
 namespace tool;
-
+//Run from http://www.tixpro.local/the_firm_assignXMLconstructor.php
 class TheFirmAssignXmlGeneratorTest extends \DatabaseBaseTest{
   
   public function testCreate(){

@@ -24,7 +24,8 @@ class AssignXMLconstructorTest extends DatabaseBaseTest{
           $evt = $this->createEvent('Simple Event', $seller->id, $this->createLocation()->id, $this->dateAt("+5 day"));
           $this->setEventId($evt, 's1mpl33v');
           $this->setEventPaymentMethodId($evt, self::MONERIS);
-          $cat = $this->createCategory('Normal', $evt->id, 45.00);
+          $this->setEventParams($evt, array('has_tax'=>0, 'cc_fee_id'=>2));
+          $cat = $this->createCategory('Normal', $evt->id, 45.00, 100, 0, array('fee_inc'=>1));
       
           $this->createStrangers10($seller, false);
           $event_id = $this->createTheFirm($seller, false);
@@ -109,7 +110,7 @@ INNER JOIN ticket_pool on ticket.code = ticket_pool.code AND ticket.category_id 
   }
   
   /**
-   * Therea are two [6-10] tables
+   * There are two [6-10] tables
    * Buy iconmpletely the 2 tables (IT)
    * Do a third purchase from cart (AT and At).
    * Purchase should fail
@@ -119,17 +120,230 @@ INNER JOIN ticket_pool on ticket.code = ticket_pool.code AND ticket.category_id 
       
       $web = new \WebUser($this->db); $web->login('foo@blah.com');
 
+      //first table (1)
       $this->clearRequest();
       $_POST = $this->purchase_6_10();
       $_GET = array('page' => 'thefirmpay');
       $cont = new \controller\Assignseating();
       $this->assertTrue($cont->ok);
       
+      //return;
+      
+      //second table (2)
       $this->clearRequest();
-      $_POST = $this->purchase_6_10('2');
+      $_POST = $this->purchase_6_10('2', 6);
       $_GET = array('page' => 'thefirmpay');
       $cont = new \controller\Assignseating();
       $this->assertTrue($cont->ok);
+      
+      //return;
+      
+      //third table
+      $this->clearRequest(); Utils::clearLog();
+      $_POST = $this->purchase_6_10_At();
+      $_GET = array('page' => 'thefirmpay');
+      $cont = new \controller\Assignseating();
+      $this->assertFalse($cont->ok);
+      
+      //TODO: It should show single seats on cart as blocked too.
+  }
+  
+  function test_min_policy(){
+      $this->createState();
+      
+      //on At, min policy should be applied
+      $this->clearRequest(); Utils::clearLog();
+      $_POST = $this->purchase_6_10_At(5);
+      $_GET = array('page' => 'thefirmpay');
+      $cont = new \controller\Assignseating();
+      $this->assertFalse($cont->ok);
+      
+  }
+  
+  function test_max_policy(){
+      $this->createState();
+      
+      //first table ok
+      $this->clearRequest(); Utils::clearLog();
+      $_POST = $this->purchase_6_10_At(7);
+      $_GET = array('page' => 'thefirmpay');
+      $cont = new \controller\Assignseating();
+      $this->assertTrue($cont->ok);
+      
+      //we have one table left, but we should not exceed the superior limit
+      $this->clearRequest(); Utils::clearLog();
+      $_POST = $this->purchase_6_10_At(11);
+      $_GET = array('page' => 'thefirmpay');
+      $cont = new \controller\Assignseating();
+      $this->assertFalse($cont->ok);
+  }
+  
+  /**
+   * There are two [6-10] tables
+   * Buy iconmpletely the 2 tables (At) Anonymous tickets
+   * Do a third purchase from cart (AT and At).
+   * Purchase should fail
+   */
+  function test_Aticket_exhaust(){
+      $this->createState();
+
+      
+      //first table ok
+      $this->clearRequest(); Utils::clearLog();
+      $_POST = $this->purchase_6_10_At(7);
+      $_GET = array('page' => 'thefirmpay');
+      $cont = new \controller\Assignseating();
+      $this->assertTrue($cont->ok);
+      
+      //second table ok
+      $this->clearRequest(); Utils::clearLog();
+      $_POST = $this->purchase_6_10_At(10);
+      $_GET = array('page' => 'thefirmpay');
+      $cont = new \controller\Assignseating();
+      $this->assertTrue($cont->ok);
+      
+      //no more tables - this should fail
+      $this->clearRequest(); Utils::clearLog();
+      $_POST = $this->purchase_6_10_At(7);
+      $_GET = array('page' => 'thefirmpay');
+      $cont = new \controller\Assignseating();
+      $this->assertFalse($cont->ok);
+      
+      
+  }
+  
+  /**
+   * There are two [6-10] tables
+   * Buy (AT) Anonymous tables
+   * Do a third purchase from cart (AT and At).
+   * Purchase should fail
+   */
+  function test_ATable_exhaust(){
+      $this->createState();
+      
+      $this->clearRequest(); Utils::clearLog();
+      $_POST = $this->purchase_6_10_ATables(2);
+      $_GET = array('page' => 'thefirmpay');
+      $cont = new \controller\Assignseating();
+      $this->assertTrue($cont->ok);
+      
+      //a third table purchase should fail
+      $this->clearRequest(); Utils::clearLog();
+      $_POST = $this->purchase_6_10_ATables(1);
+      $_GET = array('page' => 'thefirmpay');
+      $cont = new \controller\Assignseating();
+      $this->assertFalse($cont->ok);
+      
+  }
+  
+  /**
+   * There are two [6-10] tables
+   * Buy (At) Anonymously 6t - blocks 1st table
+   * Buy (At) Anonymously 6t - blocks 2nd table
+   * Verify each table has exaclty 6 occupied seats
+   */
+  function test_Aticket_assign(){
+      $this->createState();
+  
+  
+      //first table ok
+      $this->clearRequest(); Utils::clearLog();
+      $_POST = $this->purchase_6_10_At(6);
+      $_GET = array('page' => 'thefirmpay');
+      $cont = new \controller\Assignseating();
+      $this->assertTrue($cont->ok);
+  
+      //second table ok
+      $this->clearRequest(); Utils::clearLog();
+      $_POST = $this->purchase_6_10_At(6);
+      $_GET = array('page' => 'thefirmpay');
+      $cont = new \controller\Assignseating();
+      $this->assertTrue($cont->ok);
+  
+      $this->assertRows(6, 'ticket_pool', "category_id=389 AND ticket_id IS NOT NULL AND `table`=1");
+      $this->assertRows(6, 'ticket_pool', "category_id=389 AND ticket_id IS NOT NULL AND `table`=2");
+  
+  }
+  
+  /**
+   * It should be possible to purchase two tables selected from the map
+   * Update: Nope. "if a customer purchase a table it would be the only one who bought that table"
+   */
+  function test_two_tables(){
+      $this->createState();
+      
+      $this->clearRequest(); Utils::clearLog();
+      $_POST = $this->purchase_two_tables();
+      $_GET = array('page' => 'thefirmpay');
+      $cont = new \controller\Assignseating();
+      $this->assertTrue($cont->ok);
+      
+  }
+  
+  //Bug but dropped for now
+  function test_two_DT_tables(){
+      $this->createState();
+  
+      $this->clearRequest(); Utils::clearLog();
+      $_POST = $this->purchase_two_DT_tables();
+      $_GET = array('page' => 'thefirmpay');
+      $cont = new \controller\Assignseating();
+      $this->assertTrue($cont->ok);
+  
+  }
+  
+  function test_bug01(){
+      $this->createState();
+  
+      $this->clearRequest(); Utils::clearLog();
+      $_POST = $this->purchase_bug01();
+      $_GET = array('page' => 'thefirmpay');
+      $cont = new \controller\Assignseating();
+      $this->assertTrue($cont->ok);
+  
+  }
+  
+  /**
+   * When purchasing 15 tickets of [6-10]
+   * It should fail because, while first table fills (10 tickets), 5 tickets are not enough to fill the second table
+   */
+  function test_bug02(){
+      $this->createState();
+      
+      $this->clearRequest(); Utils::clearLog();
+      $_POST = $this->purchase_6_10_At(15);
+      $_GET = array('page' => 'thefirmpay');
+      $cont = new \controller\Assignseating();
+      $this->assertFalse($cont->ok);
+      
+  }
+  
+  /**
+   * When purchasing 20 tickets of [6-10]
+   * It should succeed
+   * Two tables should be allocated
+   */
+  function test_bug03(){
+      $this->createState();
+  
+      $this->clearRequest(); Utils::clearLog();
+      $_POST = $this->purchase_6_10_At(20);
+      $_GET = array('page' => 'thefirmpay');
+      $cont = new \controller\Assignseating();
+      $this->assertTrue($cont->ok);
+  
+      $this->assertRows(20, "ticket_pool", "ticket_id IS NOT NULL and category_id=389");
+      //$this->assertRows(20, "ticket_pool", "ticket_id IS NOT NULL and category_id=389");
+  }
+  
+  function testXml(){
+      //quick xml parser
+      $path = 'C:/wamp/www/tixpro/website/resources/images/event/th/ef/ir/m1/assign/assign.xml';
+      $xml = simplexml_load_file($path);
+      //Utils::log($xml->asXML());
+      foreach($xml->tables->table as $table){
+          Utils::log($table->asXML());
+      }
   }
   
   protected function createStrangers10($seller, $create_pool = true){
@@ -474,5 +688,96 @@ INSERT INTO `category` (`id`, `name`, `description`, `event_id`, `category_id`, 
                   ),
               ));
   }
+  
+  //At: Anonymous ticket
+  protected function purchase_6_10_At($nb=6){
+      return $this->purchase_request(array(
+              'total' => 'CAD ' . ($nb*30.00), //'CAD 180.00',
+              382 => '0',
+              383 => '0',
+              384 => '0',
+              385 => $nb,
+              386 => '0',
+              387 => '0',
+              388 => '0',
+              389 => 'undefined',
+              ));
+  }
+  
+  //protected function purchase_6_20_At
+  protected function purchase_6_10_ATables($nb = 1){
+      return $this->purchase_request(array(
+              'total' => 'CAD ' . $nb*300,
+              382 => '0',
+              383 => '0',
+              384 => '0',
+              385 => '0',
+              386 => '0',
+              387 => '0',
+              388 => '0',
+              389 => $nb, //the full tables
+              )); 
+  }
+  
+  protected function purchase_two_tables(){
+      return $this->purchase_request(array(
+              'total' => 'CAD 125.00',
+              382 => '5',
+              383 => '0',
+              384 => '0',
+              385 => '0',
+              386 => '0',
+              387 => 'undefined',
+              388 => '0',
+              389 => 'undefined',
+              'table' => 
+              array (
+                0 => '382-6-3',
+                1 => '382-8-2',
+              ),
+              ));
+  }
+  
+  protected function purchase_two_DT_tables(){
+      return $this->purchase_request(array(
+              'total' => 'CAD 150.00',
+              382 => '2',
+              383 => '0',
+              384 => '0',
+              385 => '0',
+              386 => '1',
+              387 => '0',
+              388 => '0',
+              389 => '0',
+              'table' => 
+              array (
+                0 => '382-5-2',
+                1 => '386-12-1',
+              ),
+      ));
+  }
+  
+  protected function purchase_bug01(){
+      return $this->purchase_request(array(
+                'total' => 'CAD 300.00',
+                  382 => '0',
+                  383 => '0',
+                  384 => '4',
+                  385 => '0',
+                  386 => '0',
+                  387 => '1',
+                  388 => '0',
+                  389 => '0',
+                  'table' => 
+                  array (
+                    0 => '384-3-4',
+                    1 => '387-4-1',
+                  ),
+      ));
+  }
+  
+  
+  
+  
 }
 
