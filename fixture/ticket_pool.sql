@@ -2140,3 +2140,4 @@ INSERT INTO `ticket_pool` VALUES ('2139', '386', null, null, null, 'THEFIRM1VPMX
 INSERT INTO `ticket_pool` VALUES ('2140', '386', null, null, null, 'THEFIRM1CU7X1602', '16', '2', '', '0', '10');
 INSERT INTO `ticket_pool` VALUES ('2141', '386', null, null, null, 'THEFIRM1WRRX1603', '16', '3', '', '0', '10');
 INSERT INTO `ticket_pool` VALUES ('2142', '386', null, null, null, 'THEFIRM1NEGX1604', '16', '4', '', '0', '10');
+UPDATE ticket_pool SET time_reserved=NULL, txn_id=NULL, reserved=0, ticket_id=NULL, name='';

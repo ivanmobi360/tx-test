@@ -113,6 +113,31 @@ class MonerisTest extends \DatabaseBaseTest{
       
   }
   
+  //when we cancel, we are both redirect, and sent a cancelled ipn
+  function testCancel(){
+  
+      $this->prePayState();
+  
+      $buyer = $this->buyer;
+      $buyer->addToCart($this->cat->id, 1); //cart in session
+      $total = $buyer->getCart()->getTotal();
+      $txn_id = $this->doTransaction();
+      
+      $this->assertRows(1, 'ticket_transaction', "completed=0 AND cancelled=0");
+      //return;
+  
+      Utils::clearLog();
+      $this->clearRequest();
+      $_GET['pt'] = 'm';
+      $_POST['xml_response'] = MonerisTestTools::createCancelXml($buyer->id, $txn_id);
+      $cnt = new \controller\Ipnlistener();
+  
+      $this->assertRows(1, 'ticket_transaction', "completed=0 AND cancelled=1");
+      $this->assertRows(0, 'moneris_transactions');
+      $this->assertRows(0, 'ticket');
+  
+  }
+  
   /**
    * This test fails if $this->handlePurchaseResponse() is commented out in \controller\Moneris
    */

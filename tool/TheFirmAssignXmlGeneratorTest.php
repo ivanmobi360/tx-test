@@ -10,6 +10,7 @@ class TheFirmAssignXmlGeneratorTest extends \DatabaseBaseTest{
         $main = new TheFirmAssignXmlGenerator();
         $main->build();
         
+        \Utils::clearLog();
         \Utils::log(__METHOD__ . " xml: \n" . $main->getAssignXml() );
         
         //Expect 16 tables

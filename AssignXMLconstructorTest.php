@@ -1,4 +1,6 @@
 <?php
+use model\Categories;
+
 use tool\Request;
 
 /**
@@ -6,6 +8,8 @@ use tool\Request;
  * 
  */
 class AssignXMLconstructorTest extends DatabaseBaseTest{
+    
+   
   
   //simple test runner
   function testRun(){
@@ -17,7 +21,7 @@ class AssignXMLconstructorTest extends DatabaseBaseTest{
       if (!in_array('no-clear', $argv)){
            
           $this->clearAll();
-          $this->db->Query("TRUNCATE TABLE ticket_pool");
+          //$this->db->Query("TRUNCATE TABLE ticket_pool");
           $seller = $this->createUser('seller');
           $foo = $this->createUser('foo');
            
@@ -28,19 +32,27 @@ class AssignXMLconstructorTest extends DatabaseBaseTest{
           $cat = $this->createCategory('Normal', $evt->id, 45.00, 100, 0, array('fee_inc'=>1));
       
           $this->createStrangers10($seller, false);
+          
           $event_id = $this->createTheFirm($seller, false);
+          
+          if ($this->db->get_one("SELECT id FROM ticket_pool LIMIT 1")){
+              //just reset them
+              $this->db->Query("UPDATE ticket_pool SET time_reserved=NULL, txn_id=NULL, reserved=0, ticket_id=NULL, name=''");
+          }else{
+              $this->db->Query("TRUNCATE TABLE ticket_pool");
+              $this->db->beginTransaction();
+              $this->db->executeBlock(file_get_contents(__DIR__ . "/fixture/ticket_pool.sql"));
+              $this->db->commit();
+          }
            
-          $this->db->Query("TRUNCATE TABLE ticket_pool");
-          $this->db->beginTransaction();
-          $this->db->executeBlock(file_get_contents(__DIR__ . "/fixture/ticket_pool.sql"));
-          $this->db->commit();
+          
            
       }
   }
   
   function testTheFirm(){
       
-      $this->createState();
+    $this->createState();
 	
 	//Now we'll do some purchases. First we'll do a purchase of a map selected 4-8 table
 	$web = new \WebUser($this->db); $web->login('foo@blah.com'); //login for laughs
@@ -336,6 +348,121 @@ INNER JOIN ticket_pool on ticket.code = ticket_pool.code AND ticket.category_id 
       //$this->assertRows(20, "ticket_pool", "ticket_id IS NOT NULL and category_id=389");
   }
   
+  /**
+   * There are only 2 [6-10] tables
+   * It should not allow to buy 3 ATables
+   */
+  function test_bug04(){
+      $this->createState();
+  
+      $this->clearRequest(); Utils::clearLog();
+      $_POST = $this->bug04();
+      $_GET = array('page' => 'thefirmpay');
+      $cont = new \controller\Assignseating();
+      $this->assertFalse($cont->ok);
+  
+  }
+  
+  /**
+   * There are 48 [2-4] free seats in 12 tables
+   * First we buy 20 seats. That should fill up 5 tables. There should be 7 free tables.
+   */
+  function test_bug05(){
+      $this->createState();
+      
+      $this->clearRequest(); Utils::clearLog();
+      $_POST = $this->purchase_2_4_At(20);
+      $_GET = array('page' => 'thefirmpay');
+      $cont = new \controller\Assignseating();
+      $this->assertTrue($cont->ok);
+      
+      $cat = new Categories(382);
+      $this->assertEquals(7, count($cat->getEmptyTables()));
+      
+  }
+  
+  function testMonerisIntegration(){
+      $this->createState();
+      $web = new \WebUser($this->db); $web->login('foo@blah.com');      
+      $this->clearRequest(); Utils::clearLog();
+      $_POST = $this->purchase_2_4_ATable();
+      $_GET = array('page' => 'thefirmpay');
+      $cont = new MonerisHandledAssigSeatingController();
+      //$this->assertTrue($cont->ok);
+      
+      $this->assertRows(0, 'ticket');
+      
+      //Now we call our listener
+      Utils::clearLog(); 
+      $this->clearRequest();
+      $_GET['pt'] = 'm';
+      $_POST['xml_response'] = \Moneris\MonerisTestTools::createXml('foo', $cont->txn_id, $cont->cart_total);
+      $cnt = new \controller\Ipnlistener();
+      
+      $this->assertRows(4, 'ticket');
+      $this->assertRows(4, 'ticket_pool', "ticket_id IS NOT NULL");
+      $this->assertEquals(self::MONERIS, $this->db->get_one("SELECT payment_method_id FROM processor_transactions LIMIT 1"));
+      $this->assertRows(1, 'moneris_transactions');
+      
+  }
+  
+  function testCancelMoneris(){
+      $this->createState();
+      $web = new \WebUser($this->db); $web->login('foo@blah.com');
+      $this->clearRequest(); Utils::clearLog();
+      $_POST = $this->purchase_2_4_ATable();
+      $_GET = array('page' => 'thefirmpay');
+      $cont = new MonerisHandledAssigSeatingController();
+      //$this->assertTrue($cont->ok);
+  
+      $this->assertRows(0, 'ticket');
+      $this->assertRows(4, 'ticket_pool', "txn_id IS NOT NULL");
+  
+      //Now we call our listener
+      Utils::clearLog();
+      $this->clearRequest();
+      $_GET['pt'] = 'm';
+      $_POST['xml_response'] = \Moneris\MonerisTestTools::createCancelXml('foo', $cont->txn_id);
+      $cnt = new \controller\Ipnlistener();
+  
+      $this->assertRows(0, 'ticket');
+      $this->assertRows(0, 'ticket_pool', "NOT(ticket_id IS NULL AND txn_id IS NULL AND time_reserved IS NULL AND reserved=0)");
+      $this->assertRows(0, 'processor_transactions');
+      $this->assertRows(0, 'moneris_transactions');
+  
+  }
+  
+  /**
+   * A cancelled cc transaction should not clear any previous buyed ticket
+   */
+  function testNoSwipe(){
+    $this->testMonerisIntegration(); //set up initial transaction
+
+    $this->clearRequest(); Utils::clearLog();
+    $_POST = $this->purchase_2_4_ATable();
+    $_GET = array('page' => 'thefirmpay');
+    $cont = new MonerisHandledAssigSeatingController();
+    //$this->assertTrue($cont->ok);
+    
+    $this->assertRows(4, 'ticket'); //from previous transacation
+    $this->assertRows(4, 'ticket_pool', "txn_id IS NOT NULL AND ticket_id IS NULL"); //pending tickets
+    
+    //Now we call our listener
+    Utils::clearLog();
+    $this->clearRequest();
+    $_GET['pt'] = 'm';
+    $_POST['xml_response'] = \Moneris\MonerisTestTools::createCancelXml('foo', $cont->txn_id);
+    $cnt = new \controller\Ipnlistener();
+    
+    //no change in previous tate
+    $this->assertRows(4, 'ticket');
+    $this->assertRows(4, 'ticket_pool', "ticket_id IS NOT NULL");
+    $this->assertEquals(self::MONERIS, $this->db->get_one("SELECT payment_method_id FROM processor_transactions LIMIT 1"));
+    $this->assertRows(1, 'moneris_transactions');
+    $this->assertRows(1, 'ticket_transaction', "cancelled=0 AND completed=1");
+    $this->assertRows(1, 'ticket_transaction', "cancelled=1 AND completed=0");
+  }
+  
   function testXml(){
       //quick xml parser
       $path = 'C:/wamp/www/tixpro/website/resources/images/event/th/ef/ir/m1/assign/assign.xml';
@@ -349,7 +476,7 @@ INNER JOIN ticket_pool on ticket.code = ticket_pool.code AND ticket.category_id 
   protected function createStrangers10($seller, $create_pool = true){
       $evt = $this->createEvent('Strangers 10', $seller->id, $this->createLocation()->id, $this->dateAt("+5 day"));
       $this->setEventId($evt, self::STRANGERS_IN_THE_NIGHT_10_ID);
-      
+  
       //for the time being we'll just dump the live database contents to reproduce the table logic
       $this->db->Query("
 INSERT INTO `category` (`id`, `name`, `description`, `event_id`, `category_id`, `price`, `capacity`, `capacity_max`, `capacity_min`, `overbooking`, `tax_inc`, `fee_inc`, `cc_fee_inc`, `fee_id`, `cc_fee_id`, `as_seats`, `hidden`, `locked_fee`, `assign`, `order`, `sold_out`) VALUES
@@ -358,49 +485,51 @@ INSERT INTO `category` (`id`, `name`, `description`, `event_id`, `category_id`, 
 (380, 'VIP Premium Seating', 'Premium Open Bar from 5:00 PM – 1:00 AM </br>VIP Valet Parking </br>Front Of The Line Drive Home Service </br>Private Preferred Table Seating for 10 </br>Dedicated servers </br>Access to VIP Lounge</br>Access to all restaurants and entertainment</br>Early entrance option available at 5 PM', '28d26a2d', 378, '5000.00', 100, 100, 0, 0, 1, 1, 1, NULL, NULL, 0, 0, NULL, 1, 0, 0),
 (381, 'Standard Preferred Seating', 'Open Bar from 6:00 PM – 1:00 AM </br>Table seating for 10 </br>Access to all restaurants and entertainment', '28d26a2d', 379, '2000.00', 300, 300, 0, 0, 1, 1, 1, NULL, NULL, 1, 0, NULL, 1, 0, 0);
 	        ");
-      
+  
       //fill up ticket pool
       if($create_pool)
-          $this->create_Stranger_10_Tickets();      
+          $this->create_Stranger_10_Tickets();
   }
   
   protected function create_Stranger_10_Tickets(){
-  	//this really heavily on some external file that changes every year. don't expect consistent results. Last time it generated 2060 tickets/rows
-  	require_once PATH_INCLUDES .'../website/assignXMLconstructor.php';
+      //this really heavily on some external file that changes every year. don't expect consistent results. Last time it generated 2060 tickets/rows
+      require_once PATH_INCLUDES .'../website/assignXMLconstructor.php';
   }
   
   protected function createTheFirm($seller, $create_pool= true){
-  	//we need to log in to create
-  	$client = new WebUser($this->db);
-  	$client->login($seller->username);
-  	
-  	$_POST = $this->get_THE_FIRM_create_data();
-  	
-  	Utils::clearLog();
-  	
-  	$cont = new controller\Newevent(); //all the logic in the constructor haha
-  	
-  	$event_id = $this->getLastEventId();
-  	$event_id = $this->changeEventId($event_id, 'thefirm1');
-  	
-  	$this->setEventPaymentMethodId(new \model\Events($event_id), self::MONERIS);
-  	
-  	//fix some malformed data for now
-  	$this->db->update('category', array('tax_inc'=>1, 'fee_inc'=>1, 'cc_fee_inc'=>1), "event_id=?", $event_id);
-  	//make the tables assign=1
-  	$this->db->update('category', array('assign'=>1), "event_id=?", $event_id);
-  	//$this->db->update('category', array('hidden'=>1), "event_id=? AND category_id IS NULL", $event_id);
-  	
-  	//now we need to create the seats of the firm
-  	if($create_pool){
-  	    $pool = new tool\TheFirmAssignXmlGenerator();
-  	    $pool->build();
-  	    \Utils::log(__METHOD__ . " xml: \n" . $pool->getAssignXml() );
-  	}
-  	
-  	
-  	return $event_id;
+      //we need to log in to create
+      $client = new WebUser($this->db);
+      $client->login($seller->username);
+       
+      $_POST = $this->get_THE_FIRM_create_data();
+       
+      Utils::clearLog();
+       
+      $cont = new controller\Newevent(); //all the logic in the constructor haha
+       
+      $event_id = $this->getLastEventId();
+      $event_id = $this->changeEventId($event_id, 'thefirm1');
+       
+      $this->setEventPaymentMethodId(new \model\Events($event_id), self::MONERIS);
+       
+      //fix some malformed data for now
+      $this->db->update('category', array('tax_inc'=>1, 'fee_inc'=>1, 'cc_fee_inc'=>1), "event_id=?", $event_id);
+      //make the tables assign=1
+      $this->db->update('category', array('assign'=>1), "event_id=?", $event_id);
+      //$this->db->update('category', array('hidden'=>1), "event_id=? AND category_id IS NULL", $event_id);
+       
+      //now we need to create the seats of the firm
+      if($create_pool){
+          $pool = new tool\TheFirmAssignXmlGenerator();
+          $pool->build();
+          \Utils::log(__METHOD__ . " xml: \n" . $pool->getAssignXml() );
+      }
+       
+       
+      return $event_id;
   }
+  
+  
   
   protected function get_THE_FIRM_create_data(){
   	return array (
@@ -776,8 +905,56 @@ INSERT INTO `category` (`id`, `name`, `description`, `event_id`, `category_id`, 
       ));
   }
   
+  protected function purchase_2_4_ATable(){
+      return $this->purchase_request(array(
+                'total' => 'CAD 100.00',
+                  382 => '0',
+                  383 => '0',
+                  384 => '0',
+                  385 => '0',
+                  386 => '1',
+                  387 => '0',
+                  388 => '0',
+                  389 => '0',
+      ));
+  }
+  
+  protected function purchase_2_4_At($nb=1){
+      return $this->purchase_request(array(
+              'total' => 'CAD ' . (25*$nb),
+              382 => $nb,
+              383 => '0',
+              384 => '0',
+              385 => '0',
+              386 => '0',
+              387 => '0',
+              388 => '0',
+              389 => '0',
+      ));
+  }
+  
+  //therea are only 2 tables
+  protected function bug04(){
+      return $this->purchase_request(array(
+              'total' => 'CAD 900.00',
+              382 => '0',
+              383 => '0',
+              384 => '0',
+              385 => '0',
+              386 => '0',
+              387 => '0',
+              388 => '0',
+              389 => '3',
+      ));      
+  }
+  
   
   
   
 }
 
+class MonerisHandledAssigSeatingController extends \controller\Assignseating{
+    function completeTransaction($txn_id){
+        //do nothgin
+    }
+} 

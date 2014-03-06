@@ -710,6 +710,7 @@ INSERT INTO `location` (`id`, `user_id`, `name`, `street`, `street2`, `country_i
   
   protected function clearRequest(){
     Request::clear();
+    $_GET = $_POST = array();
   }
   
   protected function login($user, $password='123456'){
