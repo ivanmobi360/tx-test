@@ -12,7 +12,7 @@ class AssignXMLconstructorTest extends DatabaseBaseTest{
    
   
   //simple test runner
-  function testRun(){
+  function xtestRun(){
     $this->create_Stranger_10_Tickets();
   }
   
