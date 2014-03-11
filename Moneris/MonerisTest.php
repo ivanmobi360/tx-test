@@ -50,29 +50,16 @@ class MonerisTest extends \DatabaseBaseTest{
     
     $this->buyer->addToCart($this->cat->id, 1); //cart in session
     
-    $this->doTransaction();
+    //$this->buyer->placeMonerisTransaction();
+    $this->buyer->payWithMoneris();
+    
+    $this->assertEquals(self::MONERIS, $this->db->get_one("SELECT payment_method_id FROM processor_transactions LIMIT 1"));
+    $this->assertRows(1, 'moneris_transactions');
+    $this->assertRows(1, 'ticket');
     
   }
   
-  protected function doTransaction(){
-      //post to check out to see what happens.
-      Request::clear();
-      
-      $_POST = array(
-              'sms-aaa-to' => '618994576'
-              ,'sms-aaa-date' => '2013-06-03'
-              ,'sms-aaa-time' => '09:00'
-              ,'ema-aaa-to' => 'Foo@gmail.com'
-              ,'ema-aaa-date' => '2013-06-01'
-              ,'ema-aaa-time' => '09:00'
-              ,'x' => '77'
-              ,'y' => '41'
-              ,'pay_mhp' => 'on'
-      );
-      
-      $cnt = new Checkout(); //used just to inspect output js in log
-      return $this->db->get_one("SELECT txn_id FROM ticket_transaction ORDER BY id DESC LIMIT 1");
-  }
+
   
   function testListener(){
 
@@ -80,22 +67,13 @@ class MonerisTest extends \DatabaseBaseTest{
       
       $buyer = $this->buyer;
       $buyer->addToCart($this->cat->id, 1); //cart in session
-      $total = $buyer->getCart()->getTotal();
-      $txn_id = $this->doTransaction();
-      //return;
-      
-      Utils::clearLog();
-      Request::clear();
-      $_POST = $_GET = array();
+      $total = $buyer->getCart()->getTotal(); //for some reason we have to store the total first
+      $txn_id = $this->buyer->placeMonerisTransaction();
       
       $xml = MonerisTestTools::createXml($buyer->id, $txn_id, $total);
+      MonerisTestTools::processIpnMessage($xml);
       
-      //Mimic a post response;
-      Utils::clearLog();
-      $_GET['pt'] = 'm';
-      $_POST['xml_response'] = $xml;
-      $cnt = new \controller\Ipnlistener();
-      
+
       $this->assertEquals(self::MONERIS, $this->db->get_one("SELECT payment_method_id FROM processor_transactions LIMIT 1"));
       $this->assertRows(1, 'moneris_transactions');
       $this->assertRows(1, 'ticket');
@@ -103,10 +81,8 @@ class MonerisTest extends \DatabaseBaseTest{
       
       
       //If the same message is sent again, nothing happens
-      Request::clear();
-      $_GET['pt'] = 'm';
-      $_POST['xml_response'] = $xml;
-      $cnt = new \controller\Ipnlistener();
+      MonerisTestTools::processIpnMessage($xml);
+
       
       $this->assertRows(1, 'moneris_transactions');
       $this->assertRows(1, 'ticket');
@@ -121,16 +97,12 @@ class MonerisTest extends \DatabaseBaseTest{
       $buyer = $this->buyer;
       $buyer->addToCart($this->cat->id, 1); //cart in session
       $total = $buyer->getCart()->getTotal();
-      $txn_id = $this->doTransaction();
+      $txn_id = $buyer->placeMonerisTransaction();
       
       $this->assertRows(1, 'ticket_transaction', "completed=0 AND cancelled=0");
       //return;
-  
-      Utils::clearLog();
-      $this->clearRequest();
-      $_GET['pt'] = 'm';
-      $_POST['xml_response'] = MonerisTestTools::createCancelXml($buyer->id, $txn_id);
-      $cnt = new \controller\Ipnlistener();
+      
+      MonerisTestTools::processIpnMessage(MonerisTestTools::createCancelXml($buyer->id, $txn_id));
   
       $this->assertRows(1, 'ticket_transaction', "completed=0 AND cancelled=1");
       $this->assertRows(0, 'moneris_transactions');
@@ -140,6 +112,10 @@ class MonerisTest extends \DatabaseBaseTest{
   
   /**
    * This test fails if $this->handlePurchaseResponse() is commented out in \controller\Moneris
+   * 
+   * If redirect data from Moneris were processed, this process would run. But at the moment to avoid
+   * race conditions, we just await for the ipn message, so this test models a process that is not happening
+   * in production at the moment
    */
   function testApprovedUrl(){
       //Moneris is setup to point to this url
@@ -148,7 +124,7 @@ class MonerisTest extends \DatabaseBaseTest{
       $buyer = $this->buyer;
       $buyer->addToCart($this->cat->id, 1); //cart in session
       $total = $buyer->getCart()->getTotal();
-      $txn_id = $this->doTransaction();
+      $txn_id = $this->buyer->placeMonerisTransaction();
       //return;
       
       Utils::clearLog();

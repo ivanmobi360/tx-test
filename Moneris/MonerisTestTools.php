@@ -8,7 +8,7 @@ use controller\Moneris as MonerisController;
 use Utils;
 class MonerisTestTools {
 
-    static function createXml($buyer_id, $txn_id, $total, $seller='seller' ){
+    static function createXml($buyer_id, $txn_id, $total, $seller_id='seller' ){
       $xml = file_get_contents(__DIR__ . '/responses/post_response2.xml');
       
       //lets override the template response
@@ -16,7 +16,7 @@ class MonerisTestTools {
       $data['rvarcustom'] = \model\Payment::createCustom(array(
               'tixpro_customerid' => $buyer_id
               , 'tixpro_txnid' => $txn_id
-              , 'tixpro_merchantid' => $seller
+              , 'tixpro_merchantid' => $seller_id
               , 'currency' => 'CAD'
       ));
       $data['response_order_id'] = $txn_id;
@@ -27,7 +27,7 @@ class MonerisTestTools {
       return $xml_string;
   }
   
-  static function createCancelXml($buyer_id, $txn_id, $seller='seller' ){
+  static function createCancelXml($buyer_id, $txn_id, $seller_id='seller' ){
       $xml = file_get_contents(__DIR__ . '/responses/cancel_response.xml');
   
       //lets override the template response
@@ -35,7 +35,7 @@ class MonerisTestTools {
       $data['rvarcustom'] = \model\Payment::createCustom(array(
               'tixpro_customerid' => $buyer_id
               , 'tixpro_txnid' => $txn_id
-              , 'tixpro_merchantid' => $seller
+              , 'tixpro_merchantid' => $seller_id
               , 'currency' => 'CAD'
       ));
       $data['response_order_id'] = $txn_id;
@@ -44,6 +44,19 @@ class MonerisTestTools {
       self::array_to_xml($data, $new_xml);
       $xml_string = $new_xml->asXML();
       return $xml_string;
+  }
+  
+  static function completeMonerisTransaction($buyer_id, $txn_id, $total, $seller_id='seller'){
+      $xml = self::createXml($buyer_id, $txn_id, $total, $seller_id);
+      self::processIpnMessage($xml);
+      return $xml;
+  }
+  
+  static function processIpnMessage($xml){
+      \tool\Request::clear(); $_GET = $_POST = array();
+      $_GET['pt'] = 'm';
+      $_POST['xml_response'] = $xml;
+      $cnt = new \controller\Ipnlistener();
   }
   
   // function defination to convert array to xml

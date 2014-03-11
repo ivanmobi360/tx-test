@@ -124,6 +124,40 @@ class WebUser{
         $ajax = new ajax\Ccpay($data);
         $ajax->Process();
     }
+    
+    function payWithMoneris(){
+        $total = $this->getCart()->getTotal(); //persisted here because subsequent calls to clearRequest delete the cart total
+        //Jump to Moneris Website
+        $txn_id = $this->placeMonerisTransaction();
+        
+        //Mimic going to Moneris website and filling out cc info. IPN sent by Moneris is processed by us.
+        $xml = \Moneris\MonerisTestTools::completeMonerisTransaction($this->id, $txn_id, $total);
+        
+        return $txn_id;
+    }
+    
+    public function placeMonerisTransaction(){
+        //strictly based in session state, so user must be logged in for this to work
+        //post to check out to see what happens.
+        $this->clearRequest();
+    
+        $_POST = array(
+                'sms-aaa-to' => '618994576'
+                ,'sms-aaa-date' => '2013-06-03'
+                ,'sms-aaa-time' => '09:00'
+                ,'ema-aaa-to' => 'Foo@gmail.com'
+                ,'ema-aaa-date' => '2013-06-01'
+                ,'ema-aaa-time' => '09:00'
+                ,'x' => '77'
+                ,'y' => '41'
+                ,'pay_mhp' => 'on'
+        );
+    
+        $cnt = new \controller\Checkout(); //used just to inspect output js in log
+        return $this->db->get_one("SELECT txn_id FROM ticket_transaction ORDER BY id DESC LIMIT 1");
+    }
+    
+    
 
     function logout(){
         $_SESSION = array();
@@ -134,6 +168,7 @@ class WebUser{
 
 
     protected function clearRequest(){
+        $_POST = $_GET = array();
         tool\Request::clear();
     }
 
