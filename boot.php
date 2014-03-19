@@ -9,6 +9,8 @@ require_once '../website/config.php';
 require_once PATH_INCLUDES . 'init.php';
 Utils::clearLog();
 file_put_contents('c:\wamp\logs\genquery.log', '');
+file_put_contents(__DIR__ .'/db_errors.txt', '');
+
 
 //test suite
 function testLoader($className) {
