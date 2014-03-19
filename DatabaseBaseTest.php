@@ -603,6 +603,14 @@ INSERT INTO `location` (`id`, `user_id`, `name`, `street`, `street2`, `country_i
   }
   
   function createBoxoffice($name, $merchant_id, $options=array()){
+      
+      $parts = explode('-', $name);
+      if (isset($parts[1])){
+          $phone = $parts[0];
+          $this->setUserHomePhone( new \model\Users($merchant_id), $phone);
+          $name = $parts[1];
+      }
+      
       $form = new \Forms\BoxOffice();
       $data = array_merge(array( 'username'=> strtolower(str_replace(' ', '', $name))
               , 'name'=>$name
@@ -611,13 +619,13 @@ INSERT INTO `location` (`id`, `user_id`, `name`, `street`, `street2`, `country_i
   
               //for boxoffice, pretend there's at least an options setup
   
-      )
+              )
               , $options);
       $form->setData($data);
       $form->process();
-      if(!$form->success()){
+      if (!$form->success()){
           throw new Exception(__METHOD__ . " " . implode( "\n",  $form->getErrors()) );
-      }
+          }
       return $form->getInsertedId();
   }
   

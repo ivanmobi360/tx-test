@@ -278,6 +278,21 @@ class SpecificFeeTest extends \DatabaseBaseTest {
       $ajax->Process();
   }
   
+  protected function makeSuperGlobalDefault($id){
+      $this->clearRequest();
+      $_POST = array (
+          'action' => 'specific-fee',
+          'option' => 'default-fee',
+          'level' => 'super',
+          'id' => '0',
+          'moduleid' => '0',
+          'feeid' => $id, //'10',
+          'type' => 'tf',
+        );
+      $ajax = new SpecificFee();
+      $ajax->Process();
+  }
+  
   
   //If the fee is in use, it should not be editable
   function testEditFee(){
@@ -366,6 +381,59 @@ class SpecificFeeTest extends \DatabaseBaseTest {
       $cat = $this->fixture();
       Utils::clearLog();     
       //$fee = $this->createSpecificFee('no change', 1.1, 2.2, 3.3, Module::WEBSITE);
+  }
+  
+  /**
+   * TX Bug: "when i set urban as default super global fee
+     mathson: the promoter fee is deactivated" - Mathias
+   * 
+   * We must determine why a Promoter Specific fee is showing in the "By Module" tab
+   * 
+   */
+  function testPromoterBug(){
+      $this->clearAll();
+      $this->fixture();
+      
+      Utils::clearLog();
+      
+      $new_fee = $this->createSpecificFee('BUG001', 14, 0, 14, null, 'seller');
+      
+      
+      
+      $_POST = array (
+          'action' => 'specific-fee',
+          'option' => 'load-list',
+          'level' => 'super',
+          'id' => '0',
+          'moduleid' => '0',
+          'module_id' => '0',
+          'user_id' => '0',
+          'event_id' => '0',
+          'category_id' => '0',
+        );
+      
+      $ajax = new SpecificFee();
+      $ajax->Process();
+      $res = $ajax->res;
+      
+      //ensure promoter-specific fee is not listed
+      foreach($res['tcfees'] as $fee){
+          if($fee['name'] == 'BUG001')
+              $this->fail("Promoter-specific fee should not be listed");
+      }
+      
+      
+      //Bug 002: Now let's set some super global fee as default
+      //Our created promoter-specific fee should still be default 1
+      Utils::clearLog();
+      $this->assertEquals(1, $this->db->get_one("SELECT is_default FROM fee WHERE id=?", $new_fee->id));
+      $this->makeSuperGlobalDefault(10);
+      $this->assertEquals(1, $this->db->get_one("SELECT is_default FROM fee WHERE id=?", $new_fee->id));
+      
+      /*$greg = $this->createUser('50233e09', 'Greg Test');
+      $evt = $this->createEvent('Golf stuff', $greg->id, $this->createLocation(), $this->dateAt('+7 day'));
+      $this->setEventId($evt, 'xxyyzzaa');
+      $cat = $this->createCategory('VOP', $evt->id, 100.00);*/
   }
   
 }
