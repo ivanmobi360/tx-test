@@ -284,46 +284,59 @@ INSERT INTO `location` (`id`, `user_id`, `name`, `street`, `street2`, `country_i
 
   protected function createEvent($name, $user_id, $location_id, $date_from=false, $time_from='', $date_to='', $time_to=''){
     if(empty($location_id)){ throw new Exception(__METHOD__ . " location id is required");}
-    $event = new Events();
-    $event->name = $name;
+    $evt = new Events();
+    $evt->name = $name;
     
-    $event->date_from = $date_from?:date('Y-m-d H:i:s');
-    $event->time_from = $time_from;
+    $evt->date_from = $date_from?:date('Y-m-d H:i:s');
+    $evt->time_from = $time_from;
     
-    $event->user_id = $user_id;
-    $event->location_id = $location_id;
+    $evt->user_id = $user_id;
+    $evt->location_id = $location_id;
     
-    $event->date_to = $date_to;
-    $event->time_to = $time_to;
-    $event->active=1;
+    $evt->date_to = $date_to;
+    $evt->time_to = $time_to;
+    $evt->active=1;
     
     //cant be null :/
-    $event->description = 'blah';
+    $evt->description = 'blah';
     
-    $event->currency_id = 1;// 7;
-    $event->private = 0;
+    $evt->currency_id = 1;// 7;
+    $evt->private = 0;
     
-    $event->ticket_template_id = '1';
+    $evt->ticket_template_id = '1';
     
-    $event->payment_method_id = self::PAYPAL;// 1; //???
-    $event->has_tax = 1;
-    $event->fee_id = 1; //magic??
+    $evt->payment_method_id = self::PAYPAL;// 1; //???
+    $evt->has_tax = 1;
+    $evt->fee_id = 1; //magic??
     
-    $event->event_theme_id = 1;
+    $evt->event_theme_id = 1;
     
-    $event->insert();
+    $evt->insert();
     
     //contact?
     $user = new \model\Users($user_id);
-    $ec = new \model\Eventcontact($event->id, $user->contact_id);
+    $ec = new \model\Eventcontact($evt->id, $user->contact_id);
     $ec->insert();
     
     //further flag that contact with userid?
     $this->db->update('contact', array('user_id'=>$user_id), 'id=?', $user->contact_id);
     $this->db->update('location', array('user_id'=>$user_id), 'id=?', $location_id);
     
-
-    return $event;
+    $this->createEventEmail($evt);
+    
+    return $evt;
+  }
+  
+  protected function createEventEmail($evt){
+      $eventmail = new \model\Eventemail();
+      $eventmail->event_id = $evt->id;
+      $eventmail->show_description = 1;
+      $eventmail->show_googlemaps = 1;
+      $eventmail->show_contact = 1;
+      $eventmail->show_images = 1;
+      $eventmail->show_videos = 1;
+      $eventmail->valid();
+      $eventmail->insert();
   }
   
   function setEventId($evt, $new_event_id){
@@ -332,10 +345,21 @@ INSERT INTO `location` (`id`, `user_id`, `name`, `street`, `street2`, `country_i
   }
   
   function setEventParams($evt, $data){
-    $this->db->update('event', $data, "id=?", $evt->id);
-    foreach ($data as $prop => $val ){
-      $evt->$prop = $val;
+      //TC has a preferred string only version
+      if(is_object($evt)){
+          $id = $evt->id;
+      }else{
+          $id = $evt;
+      }
+      
+    $this->db->update('event', $data, "id=?", $id);
+    
+    if(is_object($evt)){
+        foreach ($data as $prop => $val ){
+            $evt->$prop = $val;
+        }    
     }
+    
   }
   
   function setCategoryId($cat, $new_category_id){
