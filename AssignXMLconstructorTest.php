@@ -3,10 +3,7 @@ use model\Categories;
 
 use tool\Request;
 
-/**
- * Simple wrapper to be able to inspect and test the website/assignXMLconstructor.php test
- * 
- */
+
 class AssignXMLconstructorTest extends DatabaseBaseTest{
     
    
