@@ -65,7 +65,9 @@ abstract class DatabaseBaseTest extends BaseTest{
   	$tables = ['ticket_transaction', 'location', 'contact', 'user', 'category', 'ticket', 'event', 'event_contact', 'event_email',
 'room_designer', 'ticket_table', 'error_track', 'processor_transactions', 'promocode', 'bo_user', 
   	'optimal_transactions', 'myvirtual_transactions', 'moneris_transactions',
-'merchant_invoice', 'merchant_invoice_line', 'merchant_invoice_taxe', 'email_processor', 'banner',    ];
+'merchant_invoice', 'merchant_invoice_line', 'merchant_invoice_taxe', 'email_processor', 'banner', 
+'repeat_cycle'
+  	];
 
   	$this->clearTables($tables);
   	
