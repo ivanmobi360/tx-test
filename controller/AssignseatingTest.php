@@ -129,7 +129,7 @@ INNER JOIN ticket_pool on ticket.code = ticket_pool.code AND ticket.category_id 
 
       //first table (1)
       $this->clearRequest();
-      $_POST = $this->purchase_6_10();
+      $_POST = $this->purchase_6_10_Named_Table();
       $_GET = array('page' => 'thefirmpay');
       $cont = new \controller\Assignseating();
       $this->assertTrue($cont->ok);
@@ -138,7 +138,7 @@ INNER JOIN ticket_pool on ticket.code = ticket_pool.code AND ticket.category_id 
       
       //second table (2)
       $this->clearRequest();
-      $_POST = $this->purchase_6_10('2', 6);
+      $_POST = $this->purchase_6_10_Named_Table('2', 6);
       $_GET = array('page' => 'thefirmpay');
       $cont = new \controller\Assignseating();
       $this->assertTrue($cont->ok);
@@ -147,7 +147,7 @@ INNER JOIN ticket_pool on ticket.code = ticket_pool.code AND ticket.category_id 
       
       //third table
       $this->clearRequest(); Utils::clearLog();
-      $_POST = $this->purchase_6_10_At();
+      $_POST = $this->purchase_6_10_seats();
       $_GET = array('page' => 'thefirmpay');
       $cont = new \controller\Assignseating();
       $this->assertFalse($cont->ok);
@@ -160,7 +160,7 @@ INNER JOIN ticket_pool on ticket.code = ticket_pool.code AND ticket.category_id 
       
       //on At, min policy should be applied
       $this->clearRequest(); Utils::clearLog();
-      $_POST = $this->purchase_6_10_At(5);
+      $_POST = $this->purchase_6_10_seats(5);
       $_GET = array('page' => 'thefirmpay');
       $cont = new \controller\Assignseating();
       $this->assertFalse($cont->ok);
@@ -172,14 +172,14 @@ INNER JOIN ticket_pool on ticket.code = ticket_pool.code AND ticket.category_id 
       
       //first table ok
       $this->clearRequest(); Utils::clearLog();
-      $_POST = $this->purchase_6_10_At(7);
+      $_POST = $this->purchase_6_10_seats(7);
       $_GET = array('page' => 'thefirmpay');
       $cont = new \controller\Assignseating();
       $this->assertTrue($cont->ok);
       
       //we have one table left, but we should not exceed the superior limit
       $this->clearRequest(); Utils::clearLog();
-      $_POST = $this->purchase_6_10_At(11);
+      $_POST = $this->purchase_6_10_seats(11);
       $_GET = array('page' => 'thefirmpay');
       $cont = new \controller\Assignseating();
       $this->assertFalse($cont->ok);
@@ -197,21 +197,21 @@ INNER JOIN ticket_pool on ticket.code = ticket_pool.code AND ticket.category_id 
       
       //first table ok
       $this->clearRequest(); Utils::clearLog();
-      $_POST = $this->purchase_6_10_At(7);
+      $_POST = $this->purchase_6_10_seats(7);
       $_GET = array('page' => 'thefirmpay');
       $cont = new \controller\Assignseating();
       $this->assertTrue($cont->ok);
       
       //second table ok
       $this->clearRequest(); Utils::clearLog();
-      $_POST = $this->purchase_6_10_At(10);
+      $_POST = $this->purchase_6_10_seats(10);
       $_GET = array('page' => 'thefirmpay');
       $cont = new \controller\Assignseating();
       $this->assertTrue($cont->ok);
       
       //no more tables - this should fail
       $this->clearRequest(); Utils::clearLog();
-      $_POST = $this->purchase_6_10_At(7);
+      $_POST = $this->purchase_6_10_seats(7);
       $_GET = array('page' => 'thefirmpay');
       $cont = new \controller\Assignseating();
       $this->assertFalse($cont->ok);
@@ -229,14 +229,14 @@ INNER JOIN ticket_pool on ticket.code = ticket_pool.code AND ticket.category_id 
       $this->createState();
       
       $this->clearRequest(); Utils::clearLog();
-      $_POST = $this->purchase_6_10_ATables(2);
+      $_POST = $this->purchase_6_10_Tables(2);
       $_GET = array('page' => 'thefirmpay');
       $cont = new \controller\Assignseating();
       $this->assertTrue($cont->ok);
       
       //a third table purchase should fail
       $this->clearRequest(); Utils::clearLog();
-      $_POST = $this->purchase_6_10_ATables(1);
+      $_POST = $this->purchase_6_10_Tables(1);
       $_GET = array('page' => 'thefirmpay');
       $cont = new \controller\Assignseating();
       $this->assertFalse($cont->ok);
@@ -255,14 +255,14 @@ INNER JOIN ticket_pool on ticket.code = ticket_pool.code AND ticket.category_id 
   
       //first table ok
       $this->clearRequest(); Utils::clearLog();
-      $_POST = $this->purchase_6_10_At(6);
+      $_POST = $this->purchase_6_10_seats(6);
       $_GET = array('page' => 'thefirmpay');
       $cont = new \controller\Assignseating();
       $this->assertTrue($cont->ok);
   
       //second table ok
       $this->clearRequest(); Utils::clearLog();
-      $_POST = $this->purchase_6_10_At(6);
+      $_POST = $this->purchase_6_10_seats(6);
       $_GET = array('page' => 'thefirmpay');
       $cont = new \controller\Assignseating();
       $this->assertTrue($cont->ok);
@@ -299,11 +299,11 @@ INNER JOIN ticket_pool on ticket.code = ticket_pool.code AND ticket.category_id 
   
   }
   
-  function test_bug01(){
+  function testBug01(){
       $this->createState();
   
       $this->clearRequest(); Utils::clearLog();
-      $_POST = $this->purchase_bug01();
+      $_POST = $this->purchaseBug01();
       $_GET = array('page' => 'thefirmpay');
       $cont = new \controller\Assignseating();
       $this->assertTrue($cont->ok);
@@ -314,11 +314,11 @@ INNER JOIN ticket_pool on ticket.code = ticket_pool.code AND ticket.category_id 
    * When purchasing 15 tickets of [6-10]
    * It should fail because, while first table fills (10 tickets), 5 tickets are not enough to fill the second table
    */
-  function test_bug02(){
+  function testBug02(){
       $this->createState();
       
       $this->clearRequest(); Utils::clearLog();
-      $_POST = $this->purchase_6_10_At(15);
+      $_POST = $this->purchase_6_10_seats(15);
       $_GET = array('page' => 'thefirmpay');
       $cont = new \controller\Assignseating();
       $this->assertFalse($cont->ok);
@@ -330,11 +330,11 @@ INNER JOIN ticket_pool on ticket.code = ticket_pool.code AND ticket.category_id 
    * It should succeed
    * Two tables should be allocated
    */
-  function test_bug03(){
+  function testBug03(){
       $this->createState();
   
       $this->clearRequest(); Utils::clearLog();
-      $_POST = $this->purchase_6_10_At(20);
+      $_POST = $this->purchase_6_10_seats(20);
       $_GET = array('page' => 'thefirmpay');
       $cont = new \controller\Assignseating();
       $this->assertTrue($cont->ok);
@@ -347,7 +347,7 @@ INNER JOIN ticket_pool on ticket.code = ticket_pool.code AND ticket.category_id 
    * There are only 2 [6-10] tables
    * It should not allow to buy 3 ATables
    */
-  function test_bug04(){
+  function testBug04(){
       $this->createState();
   
       $this->clearRequest(); Utils::clearLog();
@@ -362,11 +362,11 @@ INNER JOIN ticket_pool on ticket.code = ticket_pool.code AND ticket.category_id 
    * There are 48 [2-4] free seats in 12 tables
    * First we buy 20 seats. That should fill up 5 tables. There should be 7 free tables.
    */
-  function test_bug05(){
+  function testBug05(){
       $this->createState();
       
       $this->clearRequest(); Utils::clearLog();
-      $_POST = $this->purchase_2_4_At(20);
+      $_POST = $this->purchase_2_4_seat(20);
       $_GET = array('page' => 'thefirmpay');
       $cont = new \controller\Assignseating();
       $this->assertTrue($cont->ok);
@@ -376,11 +376,72 @@ INNER JOIN ticket_pool on ticket.code = ticket_pool.code AND ticket.category_id 
       
   }
   
+  /**
+   *                  
+[2:16:22 PM] mathson: when you have only 2 available table of 2-4
+[2:17:04 PM] mathson: you try to purchase 1 table with Table [2-4] and 8 seats whits seat [2-4]
+[2:18:12 PM] mathson: the transaction pass. i think it's better to show an error message that there'is not enought seat
+[2:19:35 PM] mathson: the alert work when you try to pruchase than than available ticket for a single category. but when you combine single and table it doesnt work
+   */
+  function testBug06(){
+      $this->createState();
+      
+      $this->clearRequest(); Utils::clearLog();
+      $_POST = $this->purchase_2_4_Table(10);
+      $_GET = array('page' => 'thefirmpay');
+      $cont = new \controller\Assignseating();
+      $this->assertTrue($cont->ok);
+      
+      $cat = new Categories(382);
+      $this->assertEquals(2, count($cat->getEmptyTables()));
+      
+      //return;
+      
+      //Undetermined table case
+      $this->clearRequest(); Utils::clearLog();
+      $_POST = $this->bug06();
+      $_GET = array('page' => 'thefirmpay');
+      $cont = new \controller\Assignseating();
+      $this->assertFalse($cont->ok);
+      
+      //Determined table case
+      $this->clearRequest(); Utils::clearLog();
+      $_POST = $this->bug06a();
+      $_GET = array('page' => 'thefirmpay');
+      $cont = new \controller\Assignseating();
+      $this->assertFalse($cont->ok);
+  }
+  
+  /**
+   * This failed ok but we need a better error message.
+   * We have a single [4-6] table
+   * So, if I ask for 8 tickets
+   * It should fail saying that I have exceeded the capacity available of the only available table.
+   * Wrong error: "This category requires a minimun of 4 tickets to be purchased"
+   * Meaining that it 
+   * a. filled the only existing table with 6 tickets
+   * b. Wrongly assumed there's another [4-6] table to run minimun checks against, for the remainding 2 tickets, and fails to meet the minimum.
+   * 
+   * It should fail in a.
+   */
+  function testBug07(){
+      $this->createState();
+      
+      //Undetermined table case
+      $this->clearRequest(); Utils::clearLog();
+      $_POST = $this->bug07();
+      $_GET = array('page' => 'thefirmpay');
+      $cont = new \controller\Assignseating();
+      $this->assertFalse($cont->ok);
+  }
+  
+  
+  
   function testMonerisIntegration(){
       $this->createState();
       $web = new \WebUser($this->db); $web->login('foo@blah.com');      
       $this->clearRequest(); Utils::clearLog();
-      $_POST = $this->purchase_2_4_ATable();
+      $_POST = $this->purchase_2_4_Table();
       $_GET = array('page' => 'thefirmpay');
       $cont = new MonerisHandledAssigSeatingController();
       //$this->assertTrue($cont->ok);
@@ -405,7 +466,7 @@ INNER JOIN ticket_pool on ticket.code = ticket_pool.code AND ticket.category_id 
       $this->createState();
       $web = new \WebUser($this->db); $web->login('foo@blah.com');
       $this->clearRequest(); Utils::clearLog();
-      $_POST = $this->purchase_2_4_ATable();
+      $_POST = $this->purchase_2_4_Table();
       $_GET = array('page' => 'thefirmpay');
       $cont = new MonerisHandledAssigSeatingController();
       //$this->assertTrue($cont->ok);
@@ -434,7 +495,7 @@ INNER JOIN ticket_pool on ticket.code = ticket_pool.code AND ticket.category_id 
     $this->testMonerisIntegration(); //set up initial transaction
 
     $this->clearRequest(); Utils::clearLog();
-    $_POST = $this->purchase_2_4_ATable();
+    $_POST = $this->purchase_2_4_Table();
     $_GET = array('page' => 'thefirmpay');
     $cont = new MonerisHandledAssigSeatingController();
     //$this->assertTrue($cont->ok);
@@ -795,7 +856,7 @@ INSERT INTO `category` (`id`, `name`, `description`, `event_id`, `category_id`, 
 );
   }
 
-  protected function purchase_6_10($table_name=1, $nb_seats=7){
+  protected function purchase_6_10_Named_Table($table_name=1, $nb_seats=7){
       return $this->purchase_request(array(
               'total' => 'CAD ' . ($nb_seats * 30.00) ,
               382 => '0',
@@ -814,7 +875,7 @@ INSERT INTO `category` (`id`, `name`, `description`, `event_id`, `category_id`, 
   }
   
   //At: Anonymous ticket
-  protected function purchase_6_10_At($nb=6){
+  protected function purchase_6_10_seats($nb=6){
       return $this->purchase_request(array(
               'total' => 'CAD ' . ($nb*30.00), //'CAD 180.00',
               382 => '0',
@@ -829,7 +890,7 @@ INSERT INTO `category` (`id`, `name`, `description`, `event_id`, `category_id`, 
   }
   
   //protected function purchase_6_20_At
-  protected function purchase_6_10_ATables($nb = 1){
+  protected function purchase_6_10_Tables($nb = 1){
       return $this->purchase_request(array(
               'total' => 'CAD ' . $nb*300,
               382 => '0',
@@ -881,7 +942,7 @@ INSERT INTO `category` (`id`, `name`, `description`, `event_id`, `category_id`, 
       ));
   }
   
-  protected function purchase_bug01(){
+  protected function purchaseBug01(){
       return $this->purchase_request(array(
                 'total' => 'CAD 300.00',
                   382 => '0',
@@ -900,21 +961,21 @@ INSERT INTO `category` (`id`, `name`, `description`, `event_id`, `category_id`, 
       ));
   }
   
-  protected function purchase_2_4_ATable(){
+  protected function purchase_2_4_Table($n=1){
       return $this->purchase_request(array(
-                'total' => 'CAD 100.00',
+                'total' => 'CAD ' . (100*$n),
                   382 => '0',
                   383 => '0',
                   384 => '0',
                   385 => '0',
-                  386 => '1',
+                  386 => $n,// '1',
                   387 => '0',
                   388 => '0',
                   389 => '0',
       ));
   }
   
-  protected function purchase_2_4_At($nb=1){
+  protected function purchase_2_4_seat($nb=1){
       return $this->purchase_request(array(
               'total' => 'CAD ' . (25*$nb),
               382 => $nb,
@@ -941,6 +1002,52 @@ INSERT INTO `category` (`id`, `name`, `description`, `event_id`, `category_id`, 
               388 => '0',
               389 => '3',
       ));      
+  }
+  
+  protected function bug06(){
+      return $this->purchase_request(array(
+                'total' => 'CAD 300.00',
+                  382 => '8',
+                  383 => '0',
+                  384 => '0',
+                  385 => '0',
+                  386 => '1',
+                  387 => '0',
+                  388 => '0',
+                  389 => '0',
+      ));
+  }
+  
+  protected function bug06a(){
+      return $this->purchase_request(array(
+                'total' => 'CAD 300.00',
+                  382 => '8',
+                  383 => '0',
+                  384 => '0',
+                  385 => '0',
+                  386 => '1',
+                  387 => '0',
+                  388 => '0',
+                  389 => '0',
+                  'table' => 
+                  array (
+                    0 => '386-8-1',
+                  ),
+      ));
+  }
+  
+  protected function bug07(){
+      return $this->purchase_request(array(
+                'total' => 'CAD 240.00',
+                  382 => '0',
+                  383 => '8',
+                  384 => '0',
+                  385 => '0',
+                  386 => '0',
+                  387 => '0',
+                  388 => '0',
+                  389 => '0',
+      ));
   }
   
   
