@@ -1,12 +1,17 @@
 <?php
 
-
+/**
+ * The idea of repeat properties as part of the event creation was deprecated.
+ * @author Ivan Rodriguez
+ * Look at ajax\RepeatEventsTest for repeatable logic
+ * @deprecated
+ */
 namespace controller;
 use \WebUser, \Utils;
 class RepeatableEventTest extends \DatabaseBaseTest{
   
   
-  public function testTable(){
+  public function xtestTable(){
     $this->clearAll();
     
     $seller = $this->createUser('seller');
