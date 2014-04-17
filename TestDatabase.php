@@ -90,6 +90,10 @@ class TestDatabase {
             $this->Query($line);
             }
     }
+    
+    function disconnect(){
+        return Database::disconnect();
+    }
   
   
 	

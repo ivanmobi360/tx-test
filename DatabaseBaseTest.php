@@ -299,6 +299,12 @@ INSERT INTO `location` (`id`, `user_id`, `name`, `street`, `street2`, `country_i
     $evt->time_to = $time_to;
     $evt->active=1;
     
+    if(empty($date_to)){
+        //for now, in order to be listed, let's come up with some date_to value
+        $evt->date_to = $date_from;
+    }
+    
+    
     //cant be null :/
     $evt->description = 'blah';
     
@@ -309,7 +315,7 @@ INSERT INTO `location` (`id`, `user_id`, `name`, `street`, `street2`, `country_i
     
     $evt->payment_method_id = self::PAYPAL;// 1; //???
     $evt->has_tax = 1;
-    $evt->fee_id = 1; //magic??
+    $evt->fee_id = 33; //magic number??
     
     $evt->event_theme_id = 1;
     
