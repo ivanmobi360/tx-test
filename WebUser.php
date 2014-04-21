@@ -54,6 +54,9 @@ class WebUser{
     }
 
 
+    /**
+     * 2014-04-21 workflow needs review. Apparently simulates an old payment workflow, unusable for cash payments.
+     */
     function placeOrder($gateway=false, $date=false){
         $gateway = $gateway? $gateway: 'paypal';
         $_POST = array( 'method'=>'cart-payment', 'page'=>'Cart', 'name_pay'=>$gateway);
@@ -69,6 +72,10 @@ class WebUser{
         return $txn_id;
     }
 
+    /**
+     * 
+     * @deprecated TODO Update tests calling this code on as needed basis.
+     */
     function payByCash($txn_id){
 
         $data = array(
@@ -81,6 +88,31 @@ class WebUser{
         //Now see if controller reacts properly
         $cnt = new \controller\Payment();
         $this->clearRequest();
+    }
+    
+    /**
+     * Call this directly. No need to call placeOrder first. No need of existing txn_id
+     * Copied over from TC
+     */
+    function payByCashBtn(){
+        $_GET = array('page'=>'317c'); // parameter not tested on TX
+    
+        $data = array(
+                'pay_cash' => 'Pay By Cash'
+                , 'pay_paypal' => 'on' //  sent within form, apparently ignored       
+   
+        );
+    
+        //$data = $this->addReminders($data); //tbd, this works on TC, but not tested here at the moment. consider porting later
+    
+        $_POST = $data;
+    
+        $cnt = new \controller\Checkout();
+        //Utils::log(__METHOD__ . " completed checkout");
+        $this->clearRequest();
+    
+        return $cnt->txn_id;
+    
     }
 
     function getCart(){

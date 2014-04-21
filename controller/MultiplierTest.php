@@ -32,15 +32,17 @@ class MultiplierTest extends DatabaseBaseTest{
     $client->login($user->username);
     $client->addToCart($catA->id, 1); //cart in session
     Utils::clearLog();
-    $client->payByCash($client->placeOrder());
+    $client->payByCashBtn();
 
     $this->assertRows(4, 'ticket');
+    //also assert completed=1 (this is more a cash payment method test)
+    $this->assertRows(1, 'ticket_transaction', " completed=1 AND cancelled=0" );
     
     $client = new \WebUser($this->db);
     $client->login($user->username);
     $client->addToCart($catB->id, 2); //cart in session
     Utils::clearLog();
-    $client->payByCash($client->placeOrder());
+    $client->payByCashBtn();
     
     
     //You should also login the boxoffice and check the correct values are displayed
