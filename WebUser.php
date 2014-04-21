@@ -157,6 +157,11 @@ class WebUser{
         $ajax->Process();
     }
     
+    /**
+     * Shortcut that does both things:
+     * 1. User places transaction on TX side. Jumps to Moneris
+     * 2. User pays on the Moneris side. IPN is generated and processed. Transaction is completed.
+     */
     function payWithMoneris(){
         $total = $this->getCart()->getTotal(); //persisted here because subsequent calls to clearRequest delete the cart total
         //Jump to Moneris Website
@@ -168,6 +173,9 @@ class WebUser{
         return $txn_id;
     }
     
+    /**
+     * Use this to test Moneris' payments steps. Usually you would do the payWithMoneris instead.
+     */
     public function placeMonerisTransaction(){
         //strictly based in session state, so user must be logged in for this to work
         //post to check out to see what happens.

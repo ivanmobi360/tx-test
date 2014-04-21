@@ -59,6 +59,48 @@ class FinancialReportTest extends DatabaseBaseTest{
     $this->buyTicketsWithCC($foo->id, $cat->id, 2);
     
   }
+  
+  function testMultiplier(){
+  
+      $this->clearAll();
+  
+      $user = $this->createUser('foo');
+      $seller = $this->createUser('seller');
+      $bo_id = $this->createBoxoffice('111-xbox', $seller->id);
+  
+      // **********************************************
+      // Eventually this test will break for the dates
+      // **********************************************
+      $evt = $this->createEvent('Multiplier Test', 'seller', $this->createLocation()->id, $this->dateAt('+5 day'));
+      $this->setEventId($evt, 'aaargh');
+      //$this->setEventParams($evt, ['has_tax'=>0]);
+      $this->setEventPaymentMethodId($evt, self::MONERIS); //for the correct ccfee to be triggered, it's not enough to 'pay with moneris'. Event must be associated with Moneris payment method
+      $catA = $this->createCategory('CREATES FOUR', $evt->id, 20.00, 100, 0, ['ticket_multiplier'=>4, 'fee_inc'=>1]);
+      $catB = $this->createCategory('NORMAL', $evt->id, 50.00, 100, 0, ['fee_inc'=>1]);
+  
+  
+      //return; //manual test fixture
+  
+      $client = new \WebUser($this->db);
+      $client->login($user->username);
+      $client->addToCart($catA->id, 1); //cart in session
+      Utils::clearLog();
+      $client->payWithMoneris();
+  
+      $this->assertRows(4, 'ticket');
+      //also assert completed=1 (this is more a cash payment method test)
+      $this->assertRows(1, 'ticket_transaction', " completed=1 AND cancelled=0" );
+  
+      $client = new \WebUser($this->db);
+      $client->login($user->username);
+      $client->addToCart($catB->id, 2); //cart in session
+      Utils::clearLog();
+      $client->payWithMoneris();
+  
+  
+      //now view the report
+  
+  }
  
 }
 
