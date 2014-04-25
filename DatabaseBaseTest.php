@@ -75,42 +75,6 @@ abstract class DatabaseBaseTest extends BaseTest{
     $this->db->Query("ALTER TABLE `category` AUTO_INCREMENT = 330;");
     $this->db->Query("ALTER TABLE `ticket` AUTO_INCREMENT = 777;");
     
-    /*
-    $this->db->Query("TRUNCATE TABLE ticket_transaction");
-    $this->db->Query("TRUNCATE TABLE location");
-    $this->db->Query("TRUNCATE TABLE contact");
-    $this->db->Query("TRUNCATE TABLE user");
-    $this->db->Query("TRUNCATE TABLE category");
-    $this->db->Query("TRUNCATE TABLE ticket");
-    
-    $this->db->Query("TRUNCATE TABLE event");
-    $this->db->Query("TRUNCATE TABLE event_contact");
-    $this->db->Query("TRUNCATE TABLE event_email");
-    //mesas
-    $this->db->Query("TRUNCATE TABLE room_designer");
-    $this->db->Query("TRUNCATE TABLE ticket_table");
-    
-    
-    $this->db->Query("TRUNCATE TABLE error_track");
-    $this->db->Query("TRUNCATE TABLE processor_transactions");
-    $this->db->Query("TRUNCATE TABLE promocode");
-    
-    $this->db->Query("TRUNCATE TABLE bo_user");
-    
-    $this->db->Query("TRUNCATE TABLE optimal_transactions");
-    $this->db->Query("TRUNCATE TABLE myvirtual_transactions");
-    $this->db->Query("TRUNCATE TABLE moneris_transactions");
-    
-    
-    $this->db->Query("TRUNCATE TABLE merchant_invoice");
-    $this->db->Query("TRUNCATE TABLE merchant_invoice_line");
-    $this->db->Query("TRUNCATE TABLE merchant_invoice_taxe");
-    
-    $this->db->Query("TRUNCATE TABLE email_processor");
-    
-    
-    $this->db->Query("TRUNCATE TABLE banner");*/
-    
     $this->db->Query(file_get_contents(__DIR__ . "/fixture/banner.sql"));
     $this->clearReminders();
     $this->resetFees();
@@ -438,7 +402,7 @@ INSERT INTO `location` (`id`, `user_id`, `name`, `street`, `street2`, `country_i
     return $this->db->insert_id();
   }
   
-  protected function createLocation($name='myLoc'){
+  protected function createLocation($name='myLoc', $user_id=false){
     $o = new Locations();
     $o->name = $name;
     $o->street = 'Calle 1';
@@ -449,6 +413,10 @@ INSERT INTO `location` (`id`, `user_id`, `name`, `street`, `street2`, `country_i
     $o->state_id = 2 ; //hardcoded to quebec?
     $o->latitude = 45.30;
     $o->longitude = -73.35;
+    if ($user_id){
+        //for event creation, user must own location
+        $o->user_id = $user_id;
+    }
     $o->insert();
     return $o;
   }
@@ -677,9 +645,10 @@ INSERT INTO `location` (`id`, `user_id`, `name`, `street`, `street2`, `country_i
     
     //$cat->sub_capacity = 1;
     $cat->overbooking = $overbooking;
-    $cat->cc_fee_inc = 0;
+    
     
     //$cat->tax_group = 2; //default?
+    $cat->cc_fee_inc = 0;
     $cat->tax_inc = 0;
     $cat->fee_inc = 0;
     
@@ -748,7 +717,7 @@ INSERT INTO `location` (`id`, `user_id`, `name`, `street`, `street2`, `country_i
     return $this->getSerial($pre);
   }
   
-  protected function clearRequest(){
+  function clearRequest(){
     Request::clear();
     $_GET = $_POST = array();
   }
