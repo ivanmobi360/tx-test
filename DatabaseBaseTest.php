@@ -402,7 +402,7 @@ INSERT INTO `location` (`id`, `user_id`, `name`, `street`, `street2`, `country_i
     return $this->db->insert_id();
   }
   
-  protected function createLocation($name='myLoc', $user_id=false){
+  protected function createLocation($name='Some Location', $user_id=false){
     $o = new Locations();
     $o->name = $name;
     $o->street = 'Calle 1';
