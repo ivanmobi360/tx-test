@@ -18,11 +18,11 @@ class EventBuilder
     
     protected $cats, $params, $cat_nb=0, $new_id=false;
     
-    static function createInstance($sys, $user){
+    static function createInstance($sys, $user=false){
         return new static($sys, $user);
     }
     
-    function __construct($sys, $user){
+    function __construct($sys, $user=false){
         $this->sys = $sys;
         $this->user = $user;
         $this->cats = [];
@@ -59,9 +59,13 @@ class EventBuilder
     
     function create(){
         
+        if($this->user){
+            $web = new \WebUser($this->sys->db);
+            $web->login($this->user->username);
+        }else{
+            //assume login has been handled externally (best practice)
+        }
         
-        $web = new \WebUser($this->sys->db);
-        $web->login($this->user->username);
         
         
         $this->sys->clearRequest();

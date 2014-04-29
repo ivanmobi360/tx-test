@@ -16,6 +16,12 @@ file_put_contents(__DIR__ .'/db_errors.txt', '');
 function testLoader($className) {
   if(file_exists(SITE_PATH.'../test/'. $className . '.php')){
     include_once(SITE_PATH.'../test/'. $className . '.php');
+    return;
+  }
+  //for helper domain-like classes
+  if(file_exists(SITE_PATH.'../test/includes/'. $className . '.php')){
+      include_once(SITE_PATH.'../test/includes/'. $className . '.php');
+      return;
   }
   
   //admin360 classes

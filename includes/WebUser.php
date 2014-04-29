@@ -3,6 +3,13 @@ class WebUser{
     public $db, $username, $id
     , $date = false //date override
     ;
+    
+    //factory method
+    static function loginAs($db, $username, $password='123456'){
+        $w = new self($db);
+        $w->login($username, $password);
+        return $w;
+    }
 
     function __construct($db){
         $this->db = $db;
@@ -95,7 +102,7 @@ class WebUser{
      * Copied over from TC
      */
     function payByCashBtn(){
-        $_GET = array('page'=>'317c'); // parameter not tested on TX
+        //$_GET = array('page'=>'317c'); // parameter not tested on TX
     
         $data = array(
                 'pay_cash' => 'Pay By Cash'
