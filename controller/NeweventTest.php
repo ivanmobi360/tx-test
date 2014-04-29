@@ -53,11 +53,13 @@ class NeweventTest extends \DatabaseBaseTest{
         $this->assertRows(1, 'event');
 
         $this->assertEquals(400, $cat->price);
+        $this->assertNull($cat->price_override);
         $this->assertEquals(40, $cat->getChildSeatCategory()->price);
+        $this->assertNull($cat->getChildSeatCategory()->price_override); //no override
 
         //must be linked
-        $this->assertEquals(1, $cat->link_prices);
-        $this->assertEquals(1, $cat->getChildSeatCategory()->link_prices);
+        $this->assertEquals(null, $cat->price_override);
+        //$this->assertEquals(1, $cat->getChildSeatCategory()->link_prices);
 
         //echo $catA->id; //It returned the id of the main table
         //return;
@@ -75,11 +77,13 @@ class NeweventTest extends \DatabaseBaseTest{
         @$cont =  new \controller\Editevents();
         //reload cat
         $cat = new \model\Categories($cat->id);
-        $this->assertEquals(0, $cat->link_prices);
-        $this->assertEquals(0, $cat->getChildSeatCategory()->link_prices);
+        //$this->assertEquals(0, $cat->link_prices);
+        //$this->assertEquals(0, $cat->getChildSeatCategory()->link_prices);
 
         $this->assertEquals(400, $cat->price);
-        $this->assertEquals(50, $cat->getChildSeatCategory()->price);
+        $this->assertNull($cat->price_override);
+        $this->assertEquals(40, $cat->getChildSeatCategory()->price);
+        $this->assertEquals(50, $cat->getChildSeatCategory()->price_override);
     }
     
     function testUnlinkedTable(){
@@ -103,12 +107,23 @@ class NeweventTest extends \DatabaseBaseTest{
         $this->assertRows(1, 'event');
 
         //unlinked prices
-        $this->assertEquals(250, $cat->getChildSeatCategory()->price);
-        $this->assertEquals(2000, $cat->price);
+        $this->assertEquals(2000.00, $cat->price);
+        $this->assertNull($cat->price_override);
+        $this->assertEquals(200.00, $cat->getChildSeatCategory()->price);
+        $this->assertEquals(250.00, $cat->getChildSeatCategory()->price_override);
+        
+        //cart test
+        Utils::clearLog();
+        $res = \tool\Cart::calculateRowValues($cat->getChildSeatCategory()->id);
+        $this->assertEquals(250, $res['result_calc']['price']);
+        
+         
+        
+        
 
         //must be unlinked
-        $this->assertEquals(0, $cat->link_prices);
-        $this->assertEquals(0, $cat->getChildSeatCategory()->link_prices);
+        //$this->assertEquals(0, $cat->link_prices);
+        //$this->assertEquals(0, $cat->getChildSeatCategory()->link_prices);
 
         //return;
 
@@ -125,11 +140,13 @@ class NeweventTest extends \DatabaseBaseTest{
         @$cont =  new \controller\Editevents();
         //reload cat
         $cat = new \model\Categories($cat->id);
-        $this->assertEquals(1, $cat->link_prices);
-        $this->assertEquals(1, $cat->getChildSeatCategory()->link_prices);
+        //$this->assertEquals(1, $cat->link_prices);
+        //$this->assertEquals(1, $cat->getChildSeatCategory()->link_prices);
 
         $this->assertEquals(2000, $cat->price);
+        $this->assertNull($cat->price_override);
         $this->assertEquals(200, $cat->getChildSeatCategory()->price);
+        $this->assertNull($cat->getChildSeatCategory()->price_override);
     
     }
     
@@ -158,8 +175,8 @@ class NeweventTest extends \DatabaseBaseTest{
   'c_email' => 'Seller@gmail.com',
   'c_companyname' => '',
   'c_position' => '',
-  'c_home_phone' => '701378019',
-  'c_phone' => '701378019',
+  'c_home_phone' => '579135104',
+  'c_phone' => '579135104',
   'l_latitude' => '9.409469999999999',
   'l_longitude' => '-75.70060999999998',
   'l_id' => '4',
@@ -211,80 +228,79 @@ class NeweventTest extends \DatabaseBaseTest{
     
     function get_unlinked_to_linked_request(){
         return array (
-  'event_id' => 'aaa',
-  'MAX_FILE_SIZE' => '3000000',
-  'e_name' => 'Dinner Time',
-  'e_capacity' => '25',
-  'e_date_from' => '2014-05-03',
-  'e_time_from' => '',
-  'e_date_to' => '',
-  'e_time_to' => '',
-  'e_description' => '<p>test</p>',
-  'e_short_description' => '',
-  'ema' => 
-  array (
-    'content' => '',
-  ),
-  'sms' => 
-  array (
-    'content' => '',
-  ),
-  'c_id' => '2',
-  'c_name' => 'Seller',
-  'c_email' => 'Seller@gmail.com',
-  'c_companyname' => '',
-  'c_position' => '',
-  'c_home_phone' => '583536929',
-  'c_phone' => '583536929',
-  'l_latitude' => '9.409469999999999',
-  'l_longitude' => '-75.70060999999998',
-  'l_id' => '4',
-  'l_name' => 'SomeLoc',
-  'l_street' => 'Calle 1',
-  'l_street2' => '',
-  'l_country_id' => '124',
-  'l_state_id' => '2',
-  'l_state' => 'AOHA',
-  'l_city' => 'Quebec',
-  'l_zipcode' => 'BB',
-  'dialog_video_title' => '',
-  'dialog_video_content' => '',
-  'id_ticket_template' => '6',
-  'email_id' => '1',
-  'email_description' => 'on',
-  'e_currency_id' => '1',
-  'payment_method' => '7',
-  'paypal_account' => '',
-  'no_tax' => 'on',
-  'tax_ref_hst' => '',
-  'tax_ref_pst' => '',
-  'tax_other_name' => '',
-  'tax_other_percentage' => '0',
-  'tax_ref_other' => '',
-  'ticket_type' => 'open',
-  'cat_all' => 
-  array (
-    0 => '0',
-  ),
-  'cat_0_type' => 'table',
-  'cat_0_id' => '330',
-  'cat_0_name' => 'Unlinked Table',
-  'cat_0_description' => 'A description',
-  'cat_0_capa' => '3',
-  'cat_0_over' => '0',
-  'cat_0_display_mode' => '1',
-  'cat_0_tcapa' => '10',
-  'cat_0_price' => '2000.00',
-  'cat_0_single_ticket' => 'true',
-  'cat_0_ticket_price' => '200.00',
-  'cat_0_link_prices' => '1',
-  'cat_0_seat_name' => 'Unlinked Seat',
-  'cat_0_seat_desc' => 'A unlinked seat',
-  'save' => 'Save',
-  'has_ccfee' => '0',
-);
+          'event_id' => 'aaa',
+          'MAX_FILE_SIZE' => '3000000',
+          'e_name' => 'Dinner Time',
+          'e_capacity' => '25',
+          'e_date_from' => '2014-05-04',
+          'e_time_from' => '',
+          'e_date_to' => '',
+          'e_time_to' => '',
+          'e_description' => '<p>test</p>',
+          'e_short_description' => '',
+          'ema' => 
+          array (
+            'content' => '',
+          ),
+          'sms' => 
+          array (
+            'content' => '',
+          ),
+          'c_id' => '2',
+          'c_name' => 'Seller',
+          'c_email' => 'Seller@gmail.com',
+          'c_companyname' => '',
+          'c_position' => '',
+          'c_home_phone' => '670610252',
+          'c_phone' => '670610252',
+          'l_latitude' => '9.409469999999999',
+          'l_longitude' => '-75.70060999999998',
+          'l_id' => '4',
+          'l_name' => 'SomeLoc',
+          'l_street' => 'Calle 1',
+          'l_street2' => '',
+          'l_country_id' => '124',
+          'l_state_id' => '2',
+          'l_state' => 'AOHA',
+          'l_city' => 'Quebec',
+          'l_zipcode' => 'BB',
+          'dialog_video_title' => '',
+          'dialog_video_content' => '',
+          'id_ticket_template' => '6',
+          'email_id' => '1',
+          'email_description' => 'on',
+          'e_currency_id' => '1',
+          'payment_method' => '7',
+          'paypal_account' => '',
+          'no_tax' => 'on',
+          'tax_ref_hst' => '',
+          'tax_ref_pst' => '',
+          'tax_other_name' => '',
+          'tax_other_percentage' => '0',
+          'tax_ref_other' => '',
+          'ticket_type' => 'open',
+          'cat_all' => 
+          array (
+            0 => '0',
+          ),
+          'cat_0_type' => 'table',
+          'cat_0_id' => '330',
+          'cat_0_name' => 'Unlinked Table',
+          'cat_0_description' => 'A description',
+          'cat_0_capa' => '3',
+          'cat_0_over' => '0',
+          'cat_0_display_mode' => '1',
+          'cat_0_tcapa' => '10',
+          'cat_0_price' => '2000.00',
+          'cat_0_single_ticket' => 'true',
+          'cat_0_ticket_price' => '200.00',
+          'cat_0_link_prices' => '1',
+          'cat_0_seat_name' => 'Unlinked Seat',
+          'cat_0_seat_desc' => 'A unlinked seat',
+          'save' => 'Save',
+          'has_ccfee' => '0',
+        );
     }
- 
 }
 
 
