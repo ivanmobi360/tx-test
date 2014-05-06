@@ -262,8 +262,11 @@ class RepeatEventsTest extends \DatabaseBaseTest{
       //Setup for manual testing
       $seller = $this->createUser('seller');
       $foo = $this->createUser('foo');
-      $evt = $this->createEvent('My Repeatable event', $seller->id, '2014-03-31');
-      $cat = $this->createCategory('Normal', $evt->id, 100.00);
+      $evt = \EventBuilder::createInstance($this, $seller)
+      ->id('aaa')
+      ->info("My Repeatable event", $this->createLocation('aLoc', $seller->id)->id, '2014-03-31'/*, '23:00:00', '', '03:00:00'*/)
+      ->addCategory(\CategoryBuilder::newInstance('Normal', 100.00))
+      ->create();
       
       $this->clearRequest();
       $_POST = $this->getRequest( $evt->id);
@@ -280,6 +283,8 @@ class RepeatEventsTest extends \DatabaseBaseTest{
       new DateTime('2014-04-24 10:00:00'),
       new DateTime('2014-04-29 10:00:00'),
       ];
+      
+      Utils::clearLog();
       
       $calc = new \tool\RepeatEventCalculator();
       $res = $calc->get($evt->id, '2014-04-01');
@@ -309,8 +314,11 @@ class RepeatEventsTest extends \DatabaseBaseTest{
       //Setup for manual testing
       $seller = $this->createUser('seller');
       $foo = $this->createUser('foo');
-      $evt = $this->createEvent('My Repeatable event', $seller->id, $this->createLocation()->id, '2014-03-01');
-      $cat = $this->createCategory('Normal', $evt->id, 100.00);
+      /*$evt = $this->createEvent('My Repeatable event', $seller->id, $this->createLocation()->id, '2014-03-01');
+      $cat = $this->createCategory('Normal', $evt->id, 100.00);*/
+      $evt = \EventBuilder::createInstance($this, $seller)->info("My Repeateable Event", $this->createLocation('MyLoc', $seller->id)->id, '2014-03-01')
+      ->addCategory(\CategoryBuilder::newInstance('Normal', 100.00))
+      ->create();
       
       $this->clearRequest();
       $_POST = $this->getRequest( $evt->id);
@@ -475,12 +483,54 @@ so we auto-correct the promoter and change date_start to nov 6th
       
   }
   
-  
-  //fixture to check listing in front page
-  function testListing(){
-      //we expect it to happen 
+  function testEndDates(){
+      
+      $this->clearAll();
+      
+      //Setup for manual testing
+      $seller = $this->createUser('seller');
+      $foo = $this->createUser('foo');
+      $evt = \EventBuilder::createInstance($this, $seller)
+      ->id('aaa')
+      ->info("Wee need End Dates Event", $this->createLocation('MyLoc', $seller->id)->id, '2014-02-03', '23:00:00', '', '03:00:00')
+      ->addCategory(\CategoryBuilder::newInstance('Normal', 100.00))
+      ->create();
+      
+      $this->clearRequest();
+      $_POST = $this->getRequest( $evt->id);
+      $_POST = array_merge($_POST, [
+              'interval' => 1,
+              'byday'=>['mo'],
+              'date_start'=>'2014-02-03'
+              , 'time' => '23:00'
+              , 'range'=>'no_end'
+              ]);
+      $ajax = new RepeatEvents();
+      $ajax->Process();
+      
+      $calc = new \tool\RepeatEventCalculator();
+      $calc->setCount(1);
+      $res = $calc->get($evt->id, '2014-05-01');
+      $this->assertEquals(new DateTime('2014-05-05 23:00:00'), $res[0]);
+      
+      $calc->setReturnSpectrum('end');
+      $res = $calc->get($evt->id, '2014-05-01');
+      $this->assertEquals(new DateTime('2014-05-06 03:00:00'), $res[0]);
+      
+      $calc->setReturnSpectrum('both');
+      $res = $calc->get($evt->id, '2014-05-01');
+      $val = $res[0];
+      $this->assertEquals(new DateTime('2014-05-05 23:00:00'), $val->start);
+      $this->assertEquals(new DateTime('2014-05-06 03:00:00'), $val->end);
+      
   }
   
+  
+  //fixture to check listing in front page
+  /*function testListing(){
+      //done by mathias 
+  }
+  */
   
   
 }
