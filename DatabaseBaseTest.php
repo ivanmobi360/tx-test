@@ -16,7 +16,7 @@ abstract class DatabaseBaseTest extends BaseTest{
   /* @var TestDatabase */
   public $db;
   
-  protected $database_name = 'tixpro_demo';
+  protected $database_name = 'tixpro';
   
   //payment methods id
   const PAYPAL = 1;
