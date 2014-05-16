@@ -175,6 +175,7 @@ class RepeatEventsTest extends \DatabaseBaseTest{
           new DateTime('2014-04-29 10:00:00'),
       ];
       
+      Utils::clearLog();
       $calc = new \tool\RepeatEventCalculator();
       $res = $calc->get($evt->id, '2014-04-01');
       $this->assertEquals(5, count($res));
@@ -583,7 +584,7 @@ so we auto-correct the promoter and change date_start to nov 6th
       $foo = $this->createUser('foo');
       $evt = \EventBuilder::createInstance($this, $seller)
       ->id('aaa')
-      ->info("Wee need End Dates Event", $this->createLocation('MyLoc', $seller->id)->id, '2014-02-03', '23:00:00', '', '03:00:00')
+      ->info("Wee need End Dates Event", $this->createLocation('MyLoc', $seller->id)->id, '2014-02-03', '23:00:00'/*, '', '03:00:00'*/)
       ->addCategory(\CategoryBuilder::newInstance('Normal', 100.00))
       ->create();
       
@@ -594,6 +595,7 @@ so we auto-correct the promoter and change date_start to nov 6th
               'byday'=>['mo'],
               'date_start'=>'2014-02-03'
               , 'time_start' => '23:00'
+              , 'duration' => 4 //4 hours, ends at 03:00:00 of the next day
               , 'range'=>'no_end'
               ]);
       $ajax = new RepeatEvents();
@@ -616,12 +618,88 @@ so we auto-correct the promoter and change date_start to nov 6th
       
   }
   
+  /**
+   * "the dates available between the two dates provided to the method needs to merge all the dates from all the rules
+   * event rule #1: Every Monday, Wednesday, Thursday at 19h, last 2h
+     event rule #2: Every Wednesday, Friday at 21h, last 3h
+     If I request the event dates between Tuesday and Friday, I should get:
+        Wednesday 19h
+        Wednesday 21h
+        Thursday 19h
+
+    from 2014-05-20 23:59:59 to 2014-05-22 23:59:59
+      or 2014-05-21 00:00:00 to 2014-05-23 00:00:00 to be consistent
+    "
+   */
+  function testMixedResults(){
+      $this->clearAll();
   
-  //fixture to check listing in front page
-  /*function testListing(){
-      //done by mathias 
+      //Setup for manual testing
+      $seller = $this->createUser('seller');
+      $foo = $this->createUser('foo');
+  
+      $evt = \EventBuilder::createInstance($this, $seller)
+      ->info('Mixed Results Event', $this->addLocation($seller->id)->id, '2014-05-19', '00:00:00')
+      ->id('aaa')
+      ->addCategory(\CategoryBuilder::newInstance('Test', 100.00))
+      ->create();
+ 
+  
+      //pattern 1
+      $this->clearRequest();
+      $req = $this->getRequest( $evt->id);
+      $req['name'] = 'Every Monday, Wednesday, Thursday at 19h, last 2h';
+      $req['time_start'] = '19:00';
+      $req['date_start'] = '2014-05-19';
+      $req['range'] = 'no_end';
+      $req['byday'] = ['mo', 'we', 'th'];
+      $req['duration'] = '2';
+      $_POST = $req;
+      $ajax = new RepeatEvents();
+      $ajax->Process();
+  
+  
+      //pattern 2
+      $this->clearRequest();
+      $req = $this->getRequest( $evt->id);
+      $req['name'] = 'Every Wednesday, Friday at 21h, last 3h';
+      $req['time_start'] = '21:00';
+      $req['date_start'] = '2014-05-21';
+      $req['range'] = 'no_end';
+      $req['byday'] = ['we', 'fr'];
+      $req['duration'] = '3';
+      $_POST = $req;
+      $ajax = new RepeatEvents();
+      $ajax->Process();
+      
+      $expected = [
+      new DateTime('2014-05-21 19:00:00'),
+      new DateTime('2014-05-21 21:00:00'),
+      new DateTime('2014-05-22 19:00:00'),
+      ];
+      
+      Utils::clearLog();
+      
+      $calc = new \tool\RepeatEventCalculator();
+      $calc->setCount(3);
+      $res = $calc->get($evt->id, '2014-05-21 00:00:00', '2014-05-23 00:00:00');
+      $this->assertEquals($expected, $res);
+      foreach ($expected as $key => $date){
+          $this->assertEquals($date, $res[$key]);
+      }
+      
+      //same result with alternate range
+      Utils::clearLog();
+      $calc = new \tool\RepeatEventCalculator();
+      $calc->setCount(3);
+      $res = $calc->get($evt->id, '2014-05-20 23:59:59', '2014-05-22 23:59:59');
+      $this->assertEquals($expected, $res);
+      foreach ($expected as $key => $date){
+          $this->assertEquals($date, $res[$key]);
+      }
+  
+  
   }
-  */
   
   
 }
