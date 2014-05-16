@@ -3,6 +3,25 @@
 namespace ajax;
 use Utils, DateTime;
 class RepeatEventsTest extends \DatabaseBaseTest{
+    
+    protected function getRequest($event_id){
+        return array (
+                'method' => 'save-pattern',
+                'name' => 'Some Pattern',
+                'event_id' => $event_id,
+                'time_start' => '10:00',
+                'frequency' => 'weekly',
+                'interval' => '1',
+                'date_start' => '2014-04-01',
+                'range' => 'until',
+                'date_end' => '2014-04-30',
+                'byday' =>
+                array (
+                        0 => 'tu',
+                        //1 => 'we',
+                ),
+        ); //repeat every tuesday, starting on 01-04, ending on 30-04. Expect it to generate  5 instances
+    }    
   
   public function testCreate(){
     $this->clearAll();
@@ -11,11 +30,17 @@ class RepeatEventsTest extends \DatabaseBaseTest{
     $seller = $this->createUser('seller');
     $foo = $this->createUser('foo');
     
-    $evt = $this->createEvent('Some event', $seller->id, $this->createLocation()->id);
-    $cat = $this->createCategory('Test', $evt->id, 100.00);
+    $evt = \EventBuilder::createInstance($this, $seller)
+        ->info('Some event', $this->addLocation($seller->id)->id, $this->dateAt('+5 day'))
+        ->id('aaa')
+        ->addCategory(\CategoryBuilder::newInstance('Test', 100.00))
+        ->create();
     
-    $evt = $this->createEvent('My Repeatable event', $seller->id, $this->createLocation()->id);
-    $cat = $this->createCategory('Normal', $evt->id, 100.00);
+    $evt = \EventBuilder::createInstance($this, $seller)
+    ->info('My Repeatable event', $this->addLocation($seller->id)->id, $this->dateAt('+5 day'))
+    ->id('bbb')
+    ->addCategory(\CategoryBuilder::newInstance('Normal', 100.00))
+    ->create();
     
     
     $this->clearRequest();
@@ -42,24 +67,90 @@ class RepeatEventsTest extends \DatabaseBaseTest{
 
   }
   
-  protected function getRequest($event_id){
-      return array (
-              'method' => 'save-pattern',
-              'name' => 'Some Pattern',
-              'event_id' => $event_id,
-              'time' => '10:00',
-              'frequency' => 'weekly',
-              'interval' => '1',
-              'date_start' => '2014-04-01',
-              'range' => 'until',
-              'date_end' => '2014-04-30',
-              'byday' =>
-              array (
-                      0 => 'tu',
-                      //1 => 'we',
-              ),
-      ); //repeat every tuesday, starting on 01-04, ending on 30-04. Expect it to generate  5 instances
+  /**
+   * "we need to be able to have more than one repeat pattern per event
+   * "Every monday and tuesday of every week, at noon"
+   * "Every thursday of every week, at 19h"
+   * 
+   */
+  function testMultiplePatterns(){
+      $this->clearAll();
+      
+      //Setup for manual testing
+      $seller = $this->createUser('seller');
+      $foo = $this->createUser('foo');
+      
+      $evt = \EventBuilder::createInstance($this, $seller)
+      ->info('Some event', $this->addLocation($seller->id)->id, '2014-05-15')
+      ->id('aaa')
+      ->addCategory(\CategoryBuilder::newInstance('Test', 100.00))
+      ->create();
+      
+      $evt = \EventBuilder::createInstance($this, $seller)
+      ->info('Multiple patterns per event', $this->addLocation($seller->id)->id, '2014-05-15')
+      ->id('bbb')
+      ->addCategory(\CategoryBuilder::newInstance('Normal', 100.00))
+      ->create();
+      
+      
+      //pattern 1
+      $this->clearRequest();
+      $req = $this->getRequest( $evt->id);
+      $req['name'] = 'Every monday and tuesday of every week, at noon';
+      $req['time_start'] = '18:00';
+      $req['date_start'] = '2014-05-19';
+      $req['range'] = 'no_end';
+      $req['byday'] = ['mo', 'tu'];
+      $req['duration'] = '';
+      $_POST = $req;
+      $ajax = new RepeatEvents();
+      $ajax->Process();
+      
+      $this->assertNull($this->db->get_one("SELECT duration FROM repeat_cycle WHERE id=?", $ajax->inserted_id));
+      
+      //pattern 2
+      $this->clearRequest();
+      $req = $this->getRequest( $evt->id);
+      $req['name'] = 'Every thursday of every week, at 19h';
+      $req['time_start'] = '19:00';
+      $req['date_start'] = '2014-05-22';
+      $req['range'] = 'no_end';
+      $req['byday'] = ['th'];
+      
+      $_POST = $req;
+      
+      $ajax = new RepeatEvents();
+      $ajax->Process();
+      $repeat_id = $ajax->inserted_id;
+      
+      $this->assertRows(2, "repeat_cycle", "event_id=?", $evt->id);
+      $this->assertEquals(1, $this->db->get_one("SELECT repeat_id FROM event WHERE id=?", $evt->id));
+      
+      //repeat with duration
+      $this->clearRequest(); 
+      $req['repeat_id'] = $repeat_id;
+      $req['duration'] = '5';
+      $_POST = $req;
+      $ajax = new RepeatEvents();
+      $ajax->Process();
+      
+      $this->assertEquals('05:00:00', $this->db->get_one("SELECT duration FROM repeat_cycle WHERE id=?", $repeat_id));
+      
+      //accept 1.5
+      $this->clearRequest();
+      $req['repeat_id'] = $repeat_id;
+      $req['duration'] = '1.5';
+      $_POST = $req;
+      $ajax = new RepeatEvents();
+      $ajax->Process();
+      
+      $this->assertEquals('01:30:00', $this->db->get_one("SELECT duration FROM repeat_cycle WHERE id=?", $repeat_id));
+      
+      
   }
+  
+  
+  
   
   //for now let's test here our repeat calculator
   function testCalc(){
@@ -364,7 +455,7 @@ class RepeatEventsTest extends \DatabaseBaseTest{
   'repeat_id' => '1',
   'name' => 'Some Pattern',
   'event_id' => 'aaa',
-  'time' => '10:00',
+  'time_start' => '10:00',
   'frequency' => 'weekly',
   'interval' => '2',
   'date_start' => '2014-03-31',
@@ -401,7 +492,7 @@ so we auto-correct the promoter and change date_start to nov 6th
   'repeat_id' => '',
   'name' => 'Derp',
   'event_id' => 'aaa',
-  'time' => '10:00',
+  'time_start' => '10:00',
   'frequency' => 'weekly',
   'interval' => '2',
   'date_start' => '2014-11-01',
@@ -449,7 +540,7 @@ so we auto-correct the promoter and change date_start to nov 6th
           'repeat_id' => '',
           'name' => 'Back to January',
           'event_id' => 'aaa',
-          'time' => '08:00',
+          'time_start' => '08:00',
           'frequency' => 'weekly',
           'interval' => '1',
           'date_start' => '2014-01-01',
@@ -502,7 +593,7 @@ so we auto-correct the promoter and change date_start to nov 6th
               'interval' => 1,
               'byday'=>['mo'],
               'date_start'=>'2014-02-03'
-              , 'time' => '23:00'
+              , 'time_start' => '23:00'
               , 'range'=>'no_end'
               ]);
       $ajax = new RepeatEvents();
