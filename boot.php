@@ -49,3 +49,5 @@ function customError($errno, $errstr, $error_file, $error_line) {
 $GLOBALS['version'] = '1.4';
 $GLOBALS['api_debug'] = false;
 $GLOBALS['api_expire'] = 300;
+
+\Database::execute("SET lc_messages = 'en_US';");
