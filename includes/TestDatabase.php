@@ -68,14 +68,14 @@ class TestDatabase {
     }
 	
     function getAll($query, $params=array() , $result_type=\Database::ASSOC ){
-        return Database::getData($query, \Database::ALL, $result_type, $params);
+        return Database::getAll($query, $params, $result_type);//Data($query, \Database::ALL, $result_type, $params);
     }
 	
     function get_col($sql, $params=array()){
         return Database::get_col($sql, $params);
     }
 	
-    function fetch_row($result_set, $dorowset=false, $result_type=\Database::BOTH ) {
+    function fetch_row($result_set, $result_type=\Database::BOTH ) {
         return Database::fetch_row($result_set, $result_type );
     }
 	
@@ -93,6 +93,26 @@ class TestDatabase {
     
     function disconnect(){
         return Database::disconnect();
+    }
+    
+    
+    //Suport for Quentin's functions porting to mysqli
+    function getData($q, $return = Database::ALL, $result_type = Database::ASSOC, $params=array()){
+    	return Database::getData($q, $return, $result_type, $params);
+    }
+    
+    //100% of the times it is used to perform horrible update queries
+    function setData($q){
+    	return \Database::setData($q);
+    }
+    
+    
+    function select($table, $cols = null, $where = null, $return = Database::ALL){
+    	return \Database::select($table, $cols, $where, $return);
+    }
+    
+    function affected_rows(){
+    	return \Database::affected_rows();
     }
   
   

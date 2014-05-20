@@ -1056,7 +1056,7 @@ INSERT INTO `category` (`id`, `name`, `description`, `event_id`, `category_id`, 
 }
 
 class MonerisHandledAssigSeatingController extends \controller\Assignseating{
-    function completeTransaction($txn_id){
+    function completeTransaction($txn_id,$tableReservation=array(),$randomItems=array(),$eventDate=false){ //extra parameters added by Mathias apparently
         //do nothgin
     }
 } 
