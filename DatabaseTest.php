@@ -86,28 +86,28 @@ class DatabaseTest extends DatabaseBaseTest{
     $this->clearTestTable();
     $this->insertTestRows(10);
      
-    $result = $this->db->Query("SELECT * FROM test");
+    $res = $this->db->Query("SELECT * FROM test");
     
-    $this->assertEquals(10, $this->db->num_rows($result));
+    $this->assertEquals(10, $this->db->num_rows($res));
     
     
-    $post = $this->db->fetch_row($result);
+    $post = $res->fetch_array();
     $this->assertEquals(1 , $post['id']);
     $this->assertEquals(1 , $post[0]);
     
-    $post = $this->db->fetch_row($result);
+    $post = $res->fetch_array();
     $this->assertEquals(2 , $post['id']);
     $this->assertEquals(2 , $post[0]);
     
-    $post = $this->db->fetch_row($result);
+    $post = $res->fetch_array();
     $this->assertEquals(3 , $post['id']);
     $this->assertEquals(3 , $post[0]);
     
-    $post = $this->db->fetch_row($result);
-    $post = $this->db->fetch_row($result);
-    $post = $this->db->fetch_row($result);
+    $post = $res->fetch_array();
+    $post = $res->fetch_array();
+    $post = $res->fetch_array();
     
-    $post = $this->db->fetch_row($result);
+    $post = $res->fetch_array();
     $this->assertEquals(7 , $post['id']);
     $this->assertEquals(7 , $post[0]);
     

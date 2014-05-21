@@ -75,9 +75,9 @@ class TestDatabase {
         return Database::get_col($sql, $params);
     }
 	
-    function fetch_row($result_set, $result_type=\Database::BOTH ) {
+    /*function fetch_row($result_set, $result_type=\Database::BOTH ) {
         return Database::fetch_row($result_set, $result_type );
-    }
+    }*/
 	
 	//test tools
     function executeBlock($sql_block){
