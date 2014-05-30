@@ -243,27 +243,25 @@ class CategoryBuilder{
         return $this->param('ccFeeIsInc', $value);
     }
     
+    function order($value){
+        return $this->param('order', $value);
+    }
+    
+    function show($value){
+        if(empty($value)){
+            unset($this->baseParams['show']);
+        }else {
+            $this->baseParams['show'] = '1';
+        }
+        return $this;
+    }
+    
     function addParams($params){
         array_merge($this->params, $params);
         return $this;
     }
     
-    protected function base(){
-        /*
-        return array(
-                'type' => 'open',
-                'name' => 'Normal Category',
-                'description' => 'A description',
-                'sms' => '1',
-                'multiplier' => '1',
-                'capa' => '99',
-                'over' => '0',
-                'price' => '100.00',
-                'copy_to_categ' => '',
-                'copy_from_categ' => '-1',
-                );
-        */
-        return array(
+    protected $baseParams = array(
                 'type' => 'open',
                 'name' => 'Normal',
                 'description' => 'A description',
@@ -274,9 +272,13 @@ class CategoryBuilder{
                 'taxIsInc' => '0',// '1',
                 'feeIsInc' => '0', // '1',
                 'ccFeeIsInc' => '0',// '1',
-                );
-        
+                'show' => '1'
+                ); 
+    
+    protected function base(){
+        return $this->baseParams;
     }
+    
     function param($name, $value){
         $this->params[$name] =  $value;
         return $this;
@@ -287,10 +289,6 @@ class CategoryBuilder{
         $res = [];
         $pre = 'cat_' . $n . '_';
         foreach($params as $key=>$value){
-            /*if (in_array($key, ['copy_to_categ', 'copy_from_categ'])){
-                $res[$key . '_' . $n ] = $value;
-                continue;
-            }*/
             $res[$pre . $key] = $value;
         }
         return $res;
