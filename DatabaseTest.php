@@ -304,6 +304,24 @@ class DatabaseTest extends DatabaseBaseTest{
   	
   	$this->db->update('test', ['title'=>'foo'], ' 1 ');
   	$this->assertEquals(5, $this->db->affected_rows());
+  	
+  }
+  
+  function testSentevents_xml_execute(){
+      $this->db->Query("TRUNCATE TABLE sentevents_xml");
+      $data['action_name'] = __METHOD__ ;
+      $data['data'] = '<some_xml>foo</some_xml>';
+      
+      $sql = "INSERT INTO `sentevents_xml`(
+				action_name,
+			    data
+			) VALUES (
+				'".$data['action_name']."',
+				AES_ENCRYPT('".$data['data']."', '".ENCRYPT_KEY."')
+			)
+	";
+      $this->db->sentevents_xml_execute($sql);
+      $this->assertRows(1, 'sentevents_xml');
   }
   
   

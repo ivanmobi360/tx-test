@@ -48,8 +48,14 @@ abstract class DatabaseBaseTest extends BaseTest{
     \Database::init(DB_HOSTNAME, $this->database_name, DB_USERNAME, DB_PASSWORD);
     $this->db = new TestDatabase();
     
+    $this->clearCache();
+    
     $this->resetSerial();
     Request::clear();
+  }
+  
+  function clearCache(){
+      \tool\Cache::clear(); //this fixes a bug in newevent test (maybe some stale object was read again)
   }
   
   public function tearDown(){
@@ -314,6 +320,7 @@ INSERT INTO `location` (`id`, `user_id`, `name`, `street`, `street2`, `country_i
   function setEventId($evt, $new_event_id){
     $this->changeEventId($evt->id, $new_event_id);
     $evt->id = $new_event_id;
+    $this->clearCache();
   }
   
   function setEventParams($evt, $data){
@@ -724,6 +731,7 @@ INSERT INTO `location` (`id`, `user_id`, `name`, `street`, `street2`, `country_i
   function clearRequest(){
     Request::clear();
     $_GET = $_POST = array();
+    $this->clearCache(); //hmmmmm
   }
   
   protected function login($user, $password='123456'){

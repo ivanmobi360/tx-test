@@ -610,8 +610,9 @@ so we auto-correct the promoter and change date_start to nov 6th
       $res = $calc->get($evt->id, '2014-05-01');
       $this->assertEquals(new DateTime('2014-05-06 03:00:00'), $res[0]);
       
+      Utils::clearLog();
       $calc->setReturnSpectrum('both');
-      $res = $calc->get($evt->id, '2014-05-01');
+      $res = $calc->get($evt->id, '2014-05-01 00:00:00');
       $val = $res[0];
       $this->assertEquals(new DateTime('2014-05-05 23:00:00'), $val->start);
       $this->assertEquals(new DateTime('2014-05-06 03:00:00'), $val->end);
@@ -699,6 +700,57 @@ so we auto-correct the promoter and change date_start to nov 6th
       }
   
   
+  }
+  
+  function testMathias(){
+      $this->clearAll();
+      
+      //Setup for manual testing
+      $seller = $this->createUser('seller');
+      $foo = $this->createUser('foo');
+      
+      $evt = \EventBuilder::createInstance($this, $seller)
+      ->info('Mixed Results Event', $this->addLocation($seller->id)->id, '2014-04-29', '05:00:00', '2014-04-30', '23:00:00')
+      ->id('aaa')
+      ->addCategory(\CategoryBuilder::newInstance('Adult', 100.00))
+      ->addCategory(\CategoryBuilder::newInstance('Kid', 60.00))
+      ->create();
+      
+      
+      //pattern 1
+      $this->clearRequest();
+      $req = $this->getRequest( $evt->id);
+      $req['name'] = 'Every Saturday';
+      $req['time_start'] = '16:00';
+      $req['date_start'] = '2014-05-03';
+      $req['range'] = 'no_end';
+      $req['byday'] = ['sa'];
+      $req['duration'] = '2';
+      $_POST = $req;
+      $ajax = new RepeatEvents();
+      $ajax->Process();
+      
+      Utils::clearLog();
+      
+      $calc = new \tool\RepeatEventCalculator();
+      $calc->setCount(2); //apparently there's a bug in the count logic and it won't work with 1 (confirmed to fail with 1)
+      $res = $calc->get($evt->id, '2014-05-24 16:00:01');
+      $this->assertEquals(new DateTime('2014-05-31 16:00:00'), $res[0]);
+      
+      $calc = new \tool\RepeatEventCalculator();
+      $calc->setCount(1); //apparently there's a bug in the count logic and it won't work with 1
+      $res = $calc->get($evt->id, '2014-05-28 10:30:00');
+      $this->assertEquals(new DateTime('2014-05-31 16:00:00'), $res[0]);
+      
+      //Utils::log(print_r($res, true));
+      
+      //so, um, let's like, run the crun
+      Utils::clearLog();
+      $cron = new \cron\NextEvent;
+      $cron->execute();
+      //this test may break after the week the test was originally authored
+      $this->assertEquals('2014-05-31 16:00:00', $this->db->get_one("SELECT next_event_from FROM event LIMIT 1"));
+      
   }
   
   
