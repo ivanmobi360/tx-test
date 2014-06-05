@@ -359,9 +359,7 @@ class RepeatEventsTest extends \DatabaseBaseTest
         $calc = new \tool\RepeatEventCalculator();
         $res = $calc->get($evt->id, '2014-03-31', '2014-09-01');
         
-        foreach ( $res as $date ) {
-            Utils::log($date->format('Y-m-d H:i:s'));
-        }
+        $this->logDates();
         
         $this->assertEquals(new DateTime('2014-04-03 10:00:00'), $res[0]);
         
@@ -370,6 +368,12 @@ class RepeatEventsTest extends \DatabaseBaseTest
         
         $res = $calc->get($evt->id, '2014-03-01', '2014-09-01');
         $this->assertEquals(new DateTime('2014-04-03 10:00:00'), $res[0]);
+    }
+    
+    protected function logDates($res){
+        foreach ( $res as $date ) {
+            Utils::log($date->format('Y-m-d H:i:s'));
+        }
     }
 
     function testAutoCorrect()
@@ -622,7 +626,10 @@ class RepeatEventsTest extends \DatabaseBaseTest
         $seller = $this->createUser('seller');
         $foo = $this->createUser('foo');
         
-        $evt = \EventBuilder::createInstance($this, $seller)->info('Yearly Event', $this->addLocation($seller->id)->id, '2014-04-29', '08:00:00')->id('aaa')->addCategory(\CategoryBuilder::newInstance('Adult', 100.00))->addCategory(\CategoryBuilder::newInstance('Kid', 60.00))->create();
+        $evt = \EventBuilder::createInstance($this, $seller)
+        ->info('Yearly Event', $this->addLocation($seller->id)->id, '2014-04-29', '08:00:00')->id('aaa')
+        ->addCategory(\CategoryBuilder::newInstance('Adult', 100.00))
+        ->addCategory(\CategoryBuilder::newInstance('Kid', 60.00))->create();
         
         // every October 20th
         // pattern 1
@@ -647,34 +654,238 @@ class RepeatEventsTest extends \DatabaseBaseTest
 
     function yearlyRequest($event_id)
     {
-        return array ('method' => 'save-pattern','name' => 'Yearly Pattern','event_id' => $event_id,'time_start' => '09:00','frequency' => 'yearly','interval' => '1','date_start' => '2014-10-20','range' => 'no_end','duration' => 24,        // hours
-        'bymonth' => 10,        // october
-        'bymonthday' => 20 )        // 20th
-        
-
+        return array ('method' => 'save-pattern'
+                ,'name' => 'Yearly Pattern'
+                ,'event_id' => $event_id
+                ,'time_start' => '09:00'
+                ,'frequency' => 'yearly'
+                ,'interval' => '1'
+                ,'date_start' => '2014-10-20'
+                ,'range' => 'no_end'
+                ,'duration' => 24        // hours
+                ,'bymonth' => 10        // october
+                ,'bymonthday' => 20         // 20th
+        )
         ;
     }
 
     function testWhen()
     {
-        // every October 20th
+        // (yearly) every October 20th
         $results[] = new DateTime('1997-10-20 09:00:00');
         $results[] = new DateTime('1998-10-20 09:00:00');
         $results[] = new DateTime('1999-10-20 09:00:00');
         
         $r = new \When\When();
         
-        $r->startDate(new DateTime("19971020T090000"))->freq("yearly")->count(3)->bymonth("10")->bymonthday("20")->generateOccurrences();
+        $r->startDate(new DateTime("19971020T090000"))
+        ->freq("yearly")
+        ->count(3)
+        ->bymonth("10")
+        ->bymonthday("20")
+        ->generateOccurrences();
         
         $occurrences = $r->occurrences;
         
         foreach ( $results as $key => $result ) {
             $this->assertEquals($result, $occurrences[$key]);
         }
-    }
-
-    function testDatesInAMonth()
-    {
+        
+        // *********************************************************
+        
+        // (monthly) every 14th and 17th
+        $results = [  new DateTime('2014-06-14 09:00:00')
+                    , new DateTime('2014-06-17 09:00:00')
+                    , new DateTime('2014-07-14 09:00:00')
+                    , new DateTime('2014-07-17 09:00:00')
+        ];
+        
+        $r = new \When\When();
+        
+        $r->startDate(new DateTime("20140601T090000"))
+        ->freq("monthly")
+        ->count(4)
+        ->bymonthday("14,17")
+        ->generateOccurrences();
+        
+        $occurrences = $r->occurrences;
+        
+        foreach ( $results as $key => $result ) {
+            $this->assertEquals($result, $occurrences[$key]);
+        }
+        
+        // ******************************************************************
+        
+        //can also choose the "last day"
+        $results = [  new DateTime('2014-02-28 09:00:00')
+        , new DateTime('2014-03-31 09:00:00')
+        , new DateTime('2014-04-30 09:00:00')
+        , new DateTime('2014-05-31 09:00:00')
+        ];
+        
+        $r = new \When\When();
+        
+        $r->startDate(new DateTime("20140201T090000"))
+        ->freq("monthly")
+        ->count(4)
+        ->bymonthday("-1")
+        ->generateOccurrences();
+        
+        $occurrences = $r->occurrences;
+        
+        foreach ( $results as $key => $result ) {
+            $this->assertEquals($result, $occurrences[$key]);
+        }
+        
+        // ******************************************************************
+        
+        //return; //skip failures from here
+        
+        //every Monday and Tuesday of the 2nd and 4th week of the month
+        $results = [  
+          new DateTime('2014-06-09 09:00:00')
+        , new DateTime('2014-06-10 09:00:00')
+        , new DateTime('2014-06-23 09:00:00')
+        , new DateTime('2014-06-24 09:00:00')
+        
+        , new DateTime('2014-07-07 09:00:00')
+        , new DateTime('2014-07-08 09:00:00')
+        , new DateTime('2014-07-21 09:00:00')
+        , new DateTime('2014-07-22 09:00:00')
+        
+        , new DateTime('2014-08-04 09:00:00')
+        , new DateTime('2014-08-05 09:00:00')
+        , new DateTime('2014-08-18 09:00:00')
+        , new DateTime('2014-08-19 09:00:00')
+        
+        ];
+        
+        
+        
+        // this is impossible with ical atm, so we'll have to join the result of 4 patterns
+        // or do some preprocessing: given the start date, calculate ISO8206 week numbers (year's based) based on the
+        // relative month based  
+        /*
+        $r = new \When\When();
+        $r->startDate(new DateTime("20140601T090000"))
+        ->freq("monthly")
+        ->count(12)
+        ->byweekno("2,4")
+        ->byday("mo,tu")
+        ->generateOccurrences();
+        
+        $occurrences = $r->occurrences;
+        */
+        //the second Monday
+        $r = new \When\When();
+        $r->startDate(new DateTime("20140601T090000"))
+        ->freq("monthly")
+        ->wkst('mo')
+        ->count(12)
+        ->byday("2mo,2tu,4mo,4tu")
+        ->generateOccurrences();
+        
+        $occurrences = $r->occurrences;
+        
+        //Utils::log(__METHOD__ . " " . print_r($occurrences, true));
+        $this->logDates($occurrences);
+        
+        foreach ( $results as $key => $result ) {
+            $this->assertEquals($result, $occurrences[$key]);
+        }
         
     }
+
+    function test_monthly()
+    {
+        //every 14th and 17th
+        $this->clearAll();
+        
+        // Setup for manual testing
+        $seller = $this->createUser('seller');
+        $foo = $this->createUser('foo');
+        
+        $evt = \EventBuilder::createInstance($this, $seller)
+        ->info('My monthly event', $this->addLocation($seller->id)->id, '2014-06-01', '08:00:00')->id('aaa')
+        ->addCategory(\CategoryBuilder::newInstance('Adult', 100.00))
+        ->addCategory(\CategoryBuilder::newInstance('Kid', 60.00))->create();
+        
+        // every October 20th
+        // pattern 1
+        $this->clearRequest();
+        Utils::clearLog();
+        $req = array ('method' => 'save-pattern'
+                ,'name' => 'Every 14th and 17th'
+                ,'event_id' => $evt->id
+                ,'time_start' => '09:00'
+                ,'frequency' => 'monthly'
+                ,'interval' => '1'
+                ,'date_start' => '2014-06-14'
+                ,'range' => 'no_end'
+                ,'duration' => 24        // hours
+                ,'bymonthday' => ["14", "17"] //"14,17" // 14th, 17th
+        );
+        $_POST = $req;
+        $ajax = new RepeatEvents();
+        $ajax->Process();
+        
+        $results = [  new DateTime('2014-06-14 09:00:00')
+                    , new DateTime('2014-06-17 09:00:00')
+                    , new DateTime('2014-07-14 09:00:00')
+                    , new DateTime('2014-07-17 09:00:00')
+                    ];
+        
+        $calc = new \tool\RepeatEventCalculator();
+        $calc->now = '2014-06-05 00:00:00';
+        $calc->setCount(4);
+        $res = $calc->get($evt->id, '2014-06-05 00:00:00', '2015-01-01 00:00:00');
+        $this->assertEquals($results, $res);
+    }
+    
+    
+    function testLastDay_of_month(){
+        //every 14th and 17th
+        $this->clearAll();
+        
+        // Setup for manual testing
+        $seller = $this->createUser('seller');
+        $foo = $this->createUser('foo');
+        
+        $evt = \EventBuilder::createInstance($this, $seller)
+        ->info('Yearly Event', $this->addLocation($seller->id)->id, '2014-02-01', '08:00:00')->id('aaa')
+        ->addCategory(\CategoryBuilder::newInstance('Adult', 100.00))
+        ->addCategory(\CategoryBuilder::newInstance('Kid', 60.00))->create();
+        
+        // every October 20th
+        // pattern 1
+        $this->clearRequest();
+        Utils::clearLog();
+        $req = array ('method' => 'save-pattern'
+                ,'name' => 'Yearly Pattern'
+                ,'event_id' => $evt->id
+                ,'time_start' => '09:00'
+                ,'frequency' => 'monthly'
+                ,'interval' => '1'
+                ,'date_start' => '2014-02-01'
+                ,'range' => 'no_end'
+                ,'duration' => 24        // hours
+                ,'bymonthday' => "-1" // last day
+        );
+        $_POST = $req;
+        $ajax = new RepeatEvents();
+        $ajax->Process();
+        
+        $results = [  new DateTime('2014-02-28 09:00:00')
+        , new DateTime('2014-03-31 09:00:00')
+        , new DateTime('2014-04-30 09:00:00')
+        , new DateTime('2014-05-31 09:00:00')
+        ];
+        
+        $calc = new \tool\RepeatEventCalculator();
+        $calc->now = '2014-02-05 00:00:00';
+        $calc->setCount(4);
+        $res = $calc->get($evt->id, '2014-02-05 00:00:00', '2015-01-01 00:00:00');
+        $this->assertEquals($results, $res);
+    }
+    
 }
